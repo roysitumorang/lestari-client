@@ -45,7 +45,7 @@
       { id: 'activity', label: 'Owner activity log', icon: 'fa-solid fa-clock-rotate-left', onClick: () => activityLog('/account/activity-logs', 'Owner activity log') },
       { id: 'deactivate', label: 'Deactivate account', icon: 'fa-solid fa-user-slash', variant: 'danger', method: 'POST', path: '/account/deactivation-requests', success: 'Deactivation requested',
         confirm: 'Request deactivation of this account? Your data stays until support processes the request.', typeToConfirm: 'DEACTIVATE',
-        response: { data: { id: 'integer', status: '"pending"', created_at: 'datetime' } } },
+        response: { data: { id: 'string (uuid)', status: '"pending"', created_at: 'datetime' } } },
     ],
     endpoints: [
       { method: 'POST', path: '/account/phone-verification', summary: 'Send an OTP to the phone number (SMS or WhatsApp).', body: { phone: 'string', channel: '"sms" | "whatsapp"' }, response: { data: { expires_in: 'integer (seconds)' } } },
@@ -53,7 +53,7 @@
       { method: 'POST', path: '/account/two-factor/setup', summary: 'Start authenticator-app setup.', response: { data: { secret: 'string', otpauth_url: 'string', qr_code_svg: 'string' } } },
       { method: 'POST', path: '/account/two-factor/enable', summary: 'Enable 2FA after confirming a code from the app.', body: { code: 'string (6 digits)' }, response: { data: { enabled: 'boolean', recovery_codes: ['string'] } } },
       { method: 'POST', path: '/account/two-factor/disable', summary: 'Turn 2FA off.', body: { password: 'string' }, response: { data: { enabled: 'boolean' } } },
-      { method: 'GET', path: '/account/activity-logs', summary: 'Sign-ins and important changes by the owner.', query: { page: 'integer', per_page: 'integer' }, response: { data: [{ id: 'integer', created_at: 'datetime', action: 'string', description: 'string', ip_address: 'string', user_agent: 'string' }], meta: '<Pagination>' } },
+      { method: 'GET', path: '/account/activity-logs', summary: 'Sign-ins and important changes by the owner.', query: { page: 'integer', per_page: 'integer' }, response: { data: [{ id: 'string (uuid)', created_at: 'datetime', action: 'string', description: 'string', ip_address: 'string', user_agent: 'string' }], meta: '<Pagination>' } },
     ],
     afterSave: (data) => { if (window.App) App.refreshUser(); return data; },
   });
@@ -142,8 +142,8 @@
       { id: 'qr', label: 'Store QR code', icon: 'fa-solid fa-qrcode', method: 'GET', path: '/settings/store/qr-code', download: 'store-qr.png', reload: false, summary: 'PNG QR code that links to the store page.' },
     ],
     endpoints: [
-      { method: 'GET', path: '/regions/provinces', summary: 'Province list for address pickers.', query: { country_code: 'string', q: 'string?' }, response: { data: [{ id: 'integer', name: 'string' }] } },
-      { method: 'GET', path: '/regions/cities', summary: 'City / regency list.', query: { province_id: 'integer?', q: 'string?' }, response: { data: [{ id: 'integer', name: 'string', province_id: 'integer' }] } },
+      { method: 'GET', path: '/regions/provinces', summary: 'Province list for address pickers.', query: { country_code: 'string', q: 'string?' }, response: { data: [{ id: 'string (uuid)', code: 'string (Kemendagri code)', name: 'string' }] } },
+      { method: 'GET', path: '/regions/cities', summary: 'City / regency list.', query: { province_id: 'string (uuid)?', q: 'string?' }, response: { data: [{ id: 'string (uuid)', name: 'string', province_id: 'string (uuid)' }] } },
     ],
   });
 
@@ -253,7 +253,7 @@
     kind: 'custom', id: 'reset-data', title: 'Reset Data', icon: 'fa-solid fa-trash-arrow-up',
     endpoints: [
       { method: 'POST', path: '/settings/reset-data/otp', summary: 'Send a one-time code to the owner before a reset.', body: { channel: '"email" | "whatsapp"' }, response: { data: { expires_in: 'integer (seconds)', sent_to: 'string (masked)' } } },
-      { method: 'POST', path: '/settings/reset-data', summary: 'Permanently delete the selected data.', body: { data_types: ['"images" | "products" | "sales" | "purchases" | "customers" | "suppliers" | "staff" | "taxes" | "discounts" | "categories" | "fees" | "promotions" | "shifts" | "points" | "held_transactions" | "online_orders"'], scope: '"all" | "year" | "month"', year: 'integer?', month: 'integer? (1-12)', otp: 'string' }, response: { data: { job_id: 'string', status: '"queued"' } } },
+      { method: 'POST', path: '/settings/reset-data', summary: 'Permanently delete the selected data.', body: { data_types: ['"images" | "products" | "sales" | "purchases" | "customers" | "suppliers" | "staff" | "taxes" | "discounts" | "categories" | "fees" | "promotions" | "shifts" | "points" | "held_transactions" | "online_orders"'], scope: '"all" | "year" | "month"', year: 'integer?', month: 'integer? (1-12)', otp: 'string' }, response: { data: { job_id: 'string (uuid)', status: '"queued"' } } },
     ],
     render: (container) => {
       const types = [['images', 'Product images'], ['products', 'Products'], ['sales', 'Sales & reports'], ['purchases', 'Purchases'], ['customers', 'Customers'], ['suppliers', 'Suppliers'], ['staff', 'Staff'], ['taxes', 'Taxes'], ['discounts', 'Discounts'], ['categories', 'Categories'], ['fees', 'Fee module'], ['promotions', 'Promotions'], ['shifts', 'Cashier shifts'], ['points', 'Points'], ['held_transactions', 'Held (open) bills'], ['online_orders', 'Online-store orders']];
@@ -367,7 +367,7 @@
     ],
     endpoints: [
       { method: 'GET', path: '/staff/{id}/permissions', summary: 'Current access rights.', response: { data: { permissions: ['string'], available: [{ value: 'string', label: 'string' }] } } },
-      { method: 'GET', path: '/staff/{id}/activity-logs', summary: 'What a staff member did.', query: { page: 'integer', per_page: 'integer' }, response: { data: [{ id: 'integer', created_at: 'datetime', action: 'string', description: 'string', ip_address: 'string' }], meta: '<Pagination>' } },
+      { method: 'GET', path: '/staff/{id}/activity-logs', summary: 'What a staff member did.', query: { page: 'integer', per_page: 'integer' }, response: { data: [{ id: 'string (uuid)', created_at: 'datetime', action: 'string', description: 'string', ip_address: 'string' }], meta: '<Pagination>' } },
       { method: 'GET', path: '/staff/billing-estimate', summary: 'Extra cost of adding staff accounts.', query: { additional_staff: 'integer' }, response: { data: { monthly_cost: 'number', currency: 'string' } } },
     ],
   });
@@ -393,7 +393,7 @@
       { key: 'account_email', label: 'Account', type: 'text', form: false }, { key: 'expires_at', label: 'Expires', type: 'datetime', form: false }, { key: 'status', label: 'Status', type: 'text', form: false },
     ],
     rowActions: [{ id: 'revoke', label: 'Revoke access', icon: 'fa-solid fa-ban', variant: 'danger', when: (r) => r.status === 'active', method: 'POST', path: '/help-access/{id}/revoke', confirm: 'Revoke this support access now?', success: 'Access revoked', response: { data: '<HelpAccess>' } }],
-    endpoints: [{ method: 'GET', path: '/help-access/accounts', summary: 'Owner and staff accounts that can be shared with support.', response: { data: [{ id: 'integer', label: 'string ("Owner (email)" / "Staff (email)")', email: 'string', role: 'string' }] } }],
+    endpoints: [{ method: 'GET', path: '/help-access/accounts', summary: 'Owner and staff accounts that can be shared with support.', response: { data: [{ id: 'string (uuid)', label: 'string ("Owner (email)" / "Staff (email)")', email: 'string', role: 'string' }] } }],
   });
 
   S({

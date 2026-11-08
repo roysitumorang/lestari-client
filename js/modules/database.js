@@ -87,8 +87,8 @@
       { id: 'duplicate', label: 'Duplicate', icon: 'fa-regular fa-copy', method: 'POST', path: '/products/{id}/duplicate', success: 'Product duplicated', summary: 'Copy a product (new SKU is generated).', response: { data: '<Product>' } },
     ],
     endpoints: [
-      { method: 'GET', path: '/products/generate-sku', summary: 'Suggest the next free SKU.', query: { category_id: 'integer?' }, response: { data: { sku: 'string' } } },
-      { method: 'GET', path: '/products/check-sku', summary: 'Check whether a SKU is already used.', query: { sku: 'string', exclude_id: 'integer?' }, response: { data: { available: 'boolean' } } },
+      { method: 'GET', path: '/products/generate-sku', summary: 'Suggest the next free SKU.', query: { category_id: 'string (uuid)?' }, response: { data: { sku: 'string' } } },
+      { method: 'GET', path: '/products/check-sku', summary: 'Check whether a SKU is already used.', query: { sku: 'string', exclude_id: 'string (uuid)?' }, response: { data: { available: 'boolean' } } },
     ],
   });
 
@@ -106,14 +106,14 @@
       { key: 'minimum_stock', label: 'Min.', format: 'number' }, { key: 'stock_value', label: 'Stock value', format: 'money' },
     ],
     fields: [
-      { key: 'product_id', label: 'Product ID', type: 'number' }, { key: 'name', label: 'Product', type: 'text' }, { key: 'sku', label: 'SKU', type: 'text' },
+      { key: 'product_id', label: 'Product ID', type: 'text', readonly: true }, { key: 'name', label: 'Product', type: 'text' }, { key: 'sku', label: 'SKU', type: 'text' },
       { key: 'stock', label: 'Stock', type: 'number' }, { key: 'unit', label: 'Unit', type: 'text' }, { key: 'minimum_stock', label: 'Minimum', type: 'number' },
       { key: 'stock_value', label: 'Stock value', type: 'money' }, { key: 'updated_at', label: 'Updated', type: 'datetime' },
     ],
     toolbar: [
       { id: 'recalculate', label: 'Recalculate stock', icon: 'fa-solid fa-rotate', method: 'POST', path: '/inventory/stocks/recalculate',
         confirm: 'Rebuild stock levels from the transaction history? This can take a while for large catalogs.', success: 'Stock recalculation started',
-        summary: 'Rebuild stock from history ("Fix stock data"). Runs as a background job.', response: { data: { job_id: 'string', status: '"queued"' } } },
+        summary: 'Rebuild stock from history ("Fix stock data"). Runs as a background job.', response: { data: { job_id: 'string (uuid)', status: '"queued"' } } },
     ],
     rowActions: [
       { id: 'adjust', label: 'Adjust stock', icon: 'fa-solid fa-sliders', method: 'POST', path: '/inventory/stocks/{product_id}/adjustments', success: 'Stock updated',
@@ -138,7 +138,7 @@
     ],
     endpoints: [
       { method: 'GET', path: '/inventory/stocks/{product_id}/movements', summary: 'Stock movement log for one product.', query: { page: 'integer', per_page: 'integer', start_date: 'date?', end_date: 'date?' },
-        response: { data: [{ id: 'integer', created_at: 'datetime', type: '"sale" | "purchase" | "adjustment" | "opname" | "transfer_in" | "transfer_out" | "return"', reference: 'string', quantity_change: 'number', stock_after: 'number', actor_name: 'string' }], meta: '<Pagination>' } },
+        response: { data: [{ id: 'string (uuid)', created_at: 'datetime', type: '"sale" | "purchase" | "adjustment" | "opname" | "transfer_in" | "transfer_out" | "return"', reference: 'string', quantity_change: 'number', stock_after: 'number', actor_name: 'string' }], meta: '<Pagination>' } },
     ],
   });
 
@@ -201,7 +201,7 @@
     ],
     endpoints: [
       { method: 'GET', path: '/customers/{id}/point-history', summary: 'Point ledger for one customer.', query: { page: 'integer', per_page: 'integer' },
-        response: { data: [{ id: 'integer', created_at: 'datetime', type: '"earned" | "redeemed" | "adjusted" | "expired"', points: 'integer', balance_after: 'integer', reference: 'string|null', note: 'string|null' }], meta: '<Pagination>' } },
+        response: { data: [{ id: 'string (uuid)', created_at: 'datetime', type: '"earned" | "redeemed" | "adjusted" | "expired"', points: 'integer', balance_after: 'integer', reference: 'string|null', note: 'string|null' }], meta: '<Pagination>' } },
     ],
   });
 

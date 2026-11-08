@@ -131,7 +131,7 @@
         { id: 'pay', label: 'Record payment', icon: 'fa-solid fa-money-bill-wave', when: (r) => r.status !== 'paid', method: 'POST', path: endpoint + '/{id}/payments', success: 'Payment recorded',
           values: (r) => ({ amount: r.remaining_amount, payment_date: UI.isoDate(new Date()), payment_method: 'cash' }),
           form: [{ key: 'payment_date', label: 'Date', type: 'date', required: true }, { key: 'amount', label: 'Amount', type: 'money', required: true, min: 1 }, { key: 'payment_method', label: 'Method', type: 'select', options: O.salesPaymentMethods, required: true }, { key: 'note', label: 'Note', type: 'textarea', col: 12 }],
-          summary: 'Pay part or all of the outstanding amount.', response: { data: { id: 'integer', paid_amount: 'number', remaining_amount: 'number', status: '"unpaid" | "paid"', payment: { id: 'integer', payment_date: 'date', amount: 'number', payment_method: 'string', note: 'string|null' } } } },
+          summary: 'Pay part or all of the outstanding amount.', response: { data: { id: 'string (uuid)', paid_amount: 'number', remaining_amount: 'number', status: '"unpaid" | "paid"', payment: { id: 'string (uuid)', payment_date: 'date', amount: 'number', payment_method: 'string', note: 'string|null' } } } },
       ],
     });
   }

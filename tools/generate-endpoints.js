@@ -53,10 +53,10 @@ function fieldType(f) {
     case 'email': return 'string (email)';
     case 'select':
     case 'lookup':
-      if (f.lookup) return 'integer (' + f.lookup.endpoint.replace(/^\//, '') + ' id) | null';
+      if (f.lookup) return lookupType(f.lookup) + ' | null';
       return f.options ? enumOf(f.options) : 'string';
     case 'multiselect':
-      if (f.lookup) return ['integer (' + f.lookup.endpoint.replace(/^\//, '') + ' id)'];
+      if (f.lookup) return [lookupType(f.lookup)];
       return [f.options ? enumOf(f.options) : 'string'];
     case 'items': {
       const o = {};
@@ -67,6 +67,13 @@ function fieldType(f) {
       if (f.format) return formatType(f.format);
       return 'string';
   }
+}
+
+// Lookup values are the referenced row's UUID unless the lookup uses another attribute (e.g. a code).
+function lookupType(lk) {
+  const src = lk.endpoint.replace(/^\//, '');
+  if (lk.value && lk.value !== 'id') return 'string (' + src + ' ' + lk.value + ')';
+  return 'string (uuid, ' + src + ' id)';
 }
 
 function formatType(fmt) {
@@ -93,14 +100,14 @@ function bodySchema(fields, opts) {
 }
 
 function resourceSchema(def) {
-  const o = { id: 'integer' };
+  const o = { id: 'string (uuid)' };
   const idKey = def.idKey || 'id';
-  if (idKey !== 'id') { delete o.id; o[idKey] = 'integer'; }
+  if (idKey !== 'id') { delete o.id; o[idKey] = 'string (uuid)'; }
   (def.fields || []).forEach((f) => {
     if (f.type === 'heading' || f.type === 'password' || f.type === 'file') return;
     setPath(o, f.key, fieldType(f));
     if (f.lookup && /_id$/.test(f.key) && f.type !== 'multiselect') {
-      setPath(o, f.key.replace(/_id$/, ''), { id: 'integer', [f.lookup.label || 'name']: 'string' });
+      setPath(o, f.key.replace(/_id$/, ''), { id: 'string (uuid)', [f.lookup.label || 'name']: 'string' });
     }
   });
   (def.columns || []).forEach((c) => {
@@ -179,7 +186,7 @@ function pageEndpoints(def) {
     if (ops.includes('read')) add({ method: 'GET', path: base + '/{' + idKey + '}', summary: 'Get one ' + (def.singular || def.title).toLowerCase() + '.', response: { data: res } });
     if (ops.includes('update')) add({ method: 'PUT', path: base + '/{' + idKey + '}', summary: 'Update a ' + (def.singular || def.title).toLowerCase() + '. Only attributes present in the body are written; send null to clear one.', body, required: req, response: { data: res } });
     if (ops.includes('delete')) add({ method: 'DELETE', path: base + '/{' + idKey + '}', summary: 'Delete a ' + (def.singular || def.title).toLowerCase() + '.', response: '204 No Content' });
-    if (ops.includes('bulk_delete')) add({ method: 'POST', path: base + '/bulk-delete', summary: 'Delete several at once.', body: { ids: ['integer'] }, required: ['`ids`'], response: { data: { deleted: 'integer' } } });
+    if (ops.includes('bulk_delete')) add({ method: 'POST', path: base + '/bulk-delete', summary: 'Delete several at once.', body: { ids: ['string (uuid)'] }, required: ['`ids`'], response: { data: { deleted: 'integer' } } });
     if (ops.includes('import')) {
       add({ method: 'POST', path: base + '/import', contentType: 'multipart/form-data', summary: 'Import rows from a spreadsheet.', body: Object.assign({ file: 'binary (.xlsx / .csv)' }, def.importModes ? { mode: enumOf(def.importModes) } : {}), required: ['`file`'], response: { data: { created: 'integer', updated: 'integer', failed: 'integer', errors: [{ row: 'integer', message: 'string' }] } } });
       add({ method: 'GET', path: base + '/import-template', summary: 'Download the import template.', response: 'File (XLSX)', isFile: true });
@@ -206,7 +213,7 @@ function pageEndpoints(def) {
     if (def.detail) {
       let r;
       if (def.detail.fields) { r = {}; def.detail.fields.forEach((f) => setPath(r, f.key, f.format ? formatType(f.format) : fieldType(f))); }
-      else r = { sales: [{ id: 'integer', created_at: 'datetime', receipt_number: 'string', cashier_name: 'string', payment_method: 'string', grand_total: 'number' }] };
+      else r = { sales: [{ id: 'string (uuid)', created_at: 'datetime', receipt_number: 'string', cashier_name: 'string', payment_method: 'string', grand_total: 'number' }] };
       if (!eps.some((e) => e.path === def.detail.endpoint)) add({ method: 'GET', path: def.detail.endpoint, summary: def.detail.title || 'Row detail.', response: { data: r } });
     }
   } else if (def.kind === 'settings') {
@@ -313,7 +320,8 @@ This is the contract the HTML client expects from the Lestari backend. It covers
 |---|---|
 | Base URL | configured in \`js/config.js\` → \`apiBaseUrl\` (default \`http://localhost:8080/api/v1\`). Every path below is relative to it. |
 | Auth | \`Authorization: Bearer <access_token>\` on every request except those marked *no token required*. Tokens come from \`POST /auth/login\`; on \`401\` the client calls \`POST /auth/refresh\` once, then returns to the login page. |
-| Branch | \`X-Branch-Id: <branch id>\` is sent when the user picked a branch in the top bar. Without it the server uses the user's default branch. All data is scoped to the store + branch. |
+| IDs | every \`id\`, \`*_id\` and \`*_ids\` value is a UUID v7 string generated by PostgreSQL (e.g. \`019a5f3c-8b2e-7d41-9c3a-5e8f1b2c4d6a\`). UUID v7 is time-ordered, so sorting by \`id\` follows creation order. Path parameters that are not valid UUIDs return \`404\`; malformed ids in a body return \`400\`/\`422\`. Exceptions: missions use their \`code\` as \`id\`, and plugins/vouchers are addressed by \`code\`. |
+| Branch | \`X-Branch-Id: <branch id>\` (UUID) is sent when the user picked a branch in the top bar. Without it the server uses the user's default branch. All data is scoped to the store + branch. |
 | Content type | \`application/json\` (UTF-8) unless an endpoint says \`multipart/form-data\`. |
 | Dates | \`date\` = \`YYYY-MM-DD\` in the store's time zone; \`datetime\` = ISO 8601 with offset, e.g. \`2026-11-08T10:32:00+07:00\`. |
 | Money | plain JSON numbers in the store currency (IDR has no decimals). Percentages are 0–100. |

@@ -46,7 +46,7 @@
   L.sharedEndpoint({ group: 'Authentication', method: 'POST', path: '/auth/logout', summary: 'Revoke the current tokens.', response: '204 No Content' });
   L.sharedEndpoint({
     group: 'Authentication', method: 'GET', path: '/auth/me', summary: 'Current user, store and active branch; also drives menu permissions.',
-    response: { data: { id: 'integer', name: 'string', email: 'string', role: '"owner" | "administrator" | "manager" | "cashier"', avatar_url: 'string|null', permissions: ['string'], store: { id: 'integer', name: 'string', logo_url: 'string|null', plan: 'string', plan_expires_at: 'datetime|null' }, branch: { id: 'integer', name: 'string', is_head_office: 'boolean' }, active_plugins: ['string'] } },
+    response: { data: { id: 'string (uuid)', name: 'string', email: 'string', role: '"owner" | "administrator" | "manager" | "cashier"', avatar_url: 'string|null', permissions: ['string'], store: { id: 'string (uuid)', name: 'string', logo_url: 'string|null', plan: 'string', plan_expires_at: 'datetime|null' }, branch: { id: 'string (uuid)', name: 'string', is_head_office: 'boolean' }, active_plugins: ['string'] } },
   });
   L.sharedEndpoint({
     group: 'Authentication', method: 'PUT', path: '/auth/password', summary: 'Change the signed-in user\'s password.',

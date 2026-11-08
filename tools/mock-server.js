@@ -25,6 +25,14 @@ const routes = all.map((e) => ({
   ep: e,
 }));
 
+/** A stable, UUID v7-shaped sample id (same key + index → same id). */
+function mockId(key, i) {
+  let h = 0;
+  for (const ch of String(key || 'id')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const hex = (h.toString(16) + '00000000').slice(0, 8);
+  return '019a0000-' + hex.slice(0, 4) + '-7' + hex.slice(4, 7) + '-8000-' + String(i).padStart(12, '0');
+}
+
 /** Turn a documented type string/structure into a sample value. */
 function sample(t, key, i) {
   if (Array.isArray(t)) return t.length ? [sample(t[0], key, 1), sample(t[0], key, 2)] : [];
@@ -33,7 +41,8 @@ function sample(t, key, i) {
   if (s === '<Pagination>') return { page: 1, per_page: 25, total: 2, total_pages: 1 };
   if (/^"/.test(s)) return s.split('|')[0].trim().replace(/"/g, '');
   if (/^\d+ \|/.test(s)) return Number(s.split('|')[0]);
-  if (/^integer/.test(s)) return key === 'id' || /_id$/.test(key) ? i : 3 * i;
+  if (/^string \(uuid/.test(s)) return mockId(key, i);
+  if (/^integer/.test(s)) return 3 * i;
   if (/^number/.test(s)) return /price|total|amount|revenue|profit|sales|value|balance|fee|cost|capital|cash|income|expense/.test(key) ? 125000 * i : 12 * i;
   if (/^boolean/.test(s)) return i % 2 === 1;
   if (/^datetime/.test(s)) return '2026-11-0' + Math.min(i, 8) + 'T10:3' + i + ':00+07:00';
@@ -48,8 +57,8 @@ function sample(t, key, i) {
 
 function apiResponse(method, url) {
   const p = url.pathname.slice(PREFIX.length) || '/';
-  if (method === 'POST' && p === '/auth/login') return [200, { data: { access_token: 'mock-access', refresh_token: 'mock-refresh', token_type: 'Bearer', expires_in: 3600, user: { id: 1, name: 'Owner' } } }];
-  if (method === 'GET' && p === '/auth/me') return [200, { data: { id: 1, name: 'Demo Owner', email: 'owner@example.com', role: 'owner', permissions: [], store: { id: 1, name: 'Toko Lestari', plan: 'pro' }, branch: { id: 1, name: 'Head office', is_head_office: true }, active_plugins: ['business', 'attendance'] } }];
+  if (method === 'POST' && p === '/auth/login') return [200, { data: { access_token: 'mock-access', refresh_token: 'mock-refresh', token_type: 'Bearer', expires_in: 3600, user: { id: mockId('user', 1), name: 'Owner' } } }];
+  if (method === 'GET' && p === '/auth/me') return [200, { data: { id: mockId('user', 1), name: 'Demo Owner', email: 'owner@example.com', role: 'owner', permissions: [], store: { id: mockId('store', 1), name: 'Toko Lestari', plan: 'pro' }, branch: { id: mockId('branch', 1), name: 'Head office', is_head_office: true }, active_plugins: ['business', 'attendance'] } }];
   if (method === 'GET' && p === '/dashboard') {
     const hourly = Array.from({ length: 24 }, (_, h) => ({ hour: String(h).padStart(2, '0') + ':00', transaction_count: h > 7 && h < 22 ? (h * 7) % 13 : 0, revenue: h > 7 && h < 22 ? ((h * 37) % 23) * 50000 : 0, profit: h > 7 && h < 22 ? ((h * 37) % 23) * 12000 : 0 }));
     return [200, { data: { date: '2026-11-08', summary: { transaction_count: 96, revenue: 7450000, profit: 1820000, compared_to_previous: { transaction_count: 12.5, revenue: -3.2, profit: 4 } }, hourly, top_products: [{ name: 'Paracetamol 500mg', quantity: 42, revenue: 420000 }], low_stock: [{ name: 'Vitamin C', stock: 2, minimum_stock: 10 }], alerts: [{ type: 'store_location', message: 'Your store has no map location yet.', action_label: 'Set location', action_route: 'store' }] } }];

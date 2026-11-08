@@ -108,7 +108,7 @@
         { key: 'voucher_code', label: 'Voucher (optional)', type: 'text' },
       ],
       after: (res) => { const u = res && res.data && res.data.payment_url; if (u) window.open(u, '_blank', 'noopener'); },
-      response: { data: { id: 'integer', reference_id: 'string', amount: 'number', admin_fee: 'number', status: '"pending"', payment_url: 'string|null', payment_instructions: 'string|null', expires_at: 'datetime' } } }],
+      response: { data: { id: 'string (uuid)', reference_id: 'string', amount: 'number', admin_fee: 'number', status: '"pending"', payment_url: 'string|null', payment_instructions: 'string|null', expires_at: 'datetime' } } }],
     rowActions: [
       { id: 'proof', label: 'Upload transfer proof', icon: 'fa-solid fa-upload', when: (r) => r.status === 'pending' && r.payment_method === 'manual_transfer', method: 'POST', path: '/ppob/deposits/{id}/payment-proof', upload: true, success: 'Proof uploaded',
         form: [{ key: 'file', label: 'Transfer receipt', type: 'file', accept: 'image/*,.pdf', required: true, col: 12 }], response: { data: '<PpobDeposit>' } },
@@ -185,8 +185,8 @@
     kind: 'custom', id: 'loans', title: 'Business Loans', icon: 'fa-solid fa-hand-holding-dollar',
     endpoints: [
       { method: 'GET', path: '/loans/providers', summary: 'Lending partners and their terms.', response: { data: [{ code: 'string', name: 'string', description: 'string', logo_url: 'string', min_amount: 'number', max_amount: 'number', tenors_months: ['integer'], interest_info: 'string', info_url: 'string|null' }] } },
-      { method: 'GET', path: '/loans/applications', summary: 'Your loan applications.', response: { data: [{ id: 'integer', provider_code: 'string', amount: 'number', tenor_months: 'integer', status: '"submitted" | "in_review" | "approved" | "rejected" | "disbursed"', created_at: 'datetime' }] } },
-      { method: 'POST', path: '/loans/applications', summary: 'Apply for a loan (store data is shared with the partner).', body: { provider_code: 'string', amount: 'number', tenor_months: 'integer', purpose: 'string', consent: 'boolean' }, response: { data: { id: 'integer', status: '"submitted"', redirect_url: 'string|null' } } },
+      { method: 'GET', path: '/loans/applications', summary: 'Your loan applications.', response: { data: [{ id: 'string (uuid)', provider_code: 'string', amount: 'number', tenor_months: 'integer', status: '"submitted" | "in_review" | "approved" | "rejected" | "disbursed"', created_at: 'datetime' }] } },
+      { method: 'POST', path: '/loans/applications', summary: 'Apply for a loan (store data is shared with the partner).', body: { provider_code: 'string', amount: 'number', tenor_months: 'integer', purpose: 'string', consent: 'boolean' }, response: { data: { id: 'string (uuid)', status: '"submitted"', redirect_url: 'string|null' } } },
     ],
     render: (container) => cardList(container, {
       title: 'Business Loans', icon: 'fa-solid fa-hand-holding-dollar', description: 'Working-capital loans from our lending partners, based on your sales history.', endpoint: '/loans/providers',

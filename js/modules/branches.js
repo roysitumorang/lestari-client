@@ -21,7 +21,7 @@
       ],
       after: (res) => { const u = res && res.data && res.data.payment_url; if (u) window.open(u, '_blank', 'noopener'); },
       summary: 'Create one invoice renewing several branches.',
-      response: { data: { invoice_id: 'integer', invoice_number: 'string', amount: 'number', admin_fee: 'number', status: '"pending" | "paid"', payment_url: 'string|null', payment_instructions: 'string|null', expires_at: 'datetime' } },
+      response: { data: { invoice_id: 'string (uuid)', invoice_number: 'string', amount: 'number', admin_fee: 'number', status: '"pending" | "paid"', payment_url: 'string|null', payment_instructions: 'string|null', expires_at: 'datetime' } },
     }],
   });
 
@@ -119,7 +119,7 @@
     rowActions: [
       { id: 'copy_products', label: 'Copy products from head office', icon: 'fa-solid fa-copy', when: (r) => !r.is_head_office, method: 'POST', path: '/branches/{id}/copy-products', success: 'Copy started',
         form: [{ key: 'category_ids', label: 'Categories (empty = all)', type: 'multiselect', lookup: lk.categories, col: 12 }, { key: 'include_stock', label: 'Copy stock quantities too', type: 'switch' }],
-        summary: 'Clone the head-office catalog into a branch.', response: { data: { job_id: 'string', status: '"queued"' } } },
+        summary: 'Clone the head-office catalog into a branch.', response: { data: { job_id: 'string (uuid)', status: '"queued"' } } },
       { id: 'switch', label: 'Open this branch', icon: 'fa-solid fa-arrow-right-to-bracket', onClick: (row) => { App.switchBranch(row.id); } },
     ],
   });

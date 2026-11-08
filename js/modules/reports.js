@@ -41,7 +41,7 @@
     columns: [{ key: 'date', label: 'Date', format: 'date' }, { key: 'transaction_count', label: 'Transactions', format: 'number' }, { key: 'gross_sales', label: 'Gross', format: 'money' }, { key: 'discounts', label: 'Discounts', format: 'money' }, { key: 'taxes', label: 'Tax', format: 'money' }, { key: 'net_sales', label: 'Net', format: 'money' }, { key: 'profit', label: 'Profit', format: 'money' }],
     detail: { endpoint: '/reports/daily-sales/{date}', title: 'Receipts of the day', render: (d) => receiptsTable(d && d.sales) },
     paginated: false,
-    toolbar: [{ id: 'resync', label: 'Rebuild report', icon: 'fa-solid fa-rotate', method: 'POST', path: '/reports/daily-sales/rebuild', useFilters: true, confirm: 'Rebuild daily totals for the selected period from the raw transactions?', success: 'Rebuild started', summary: 'Recalculate cached daily totals ("Sinkronisasi").', request: { start_date: 'date', end_date: 'date' }, response: { data: { job_id: 'string' } } }],
+    toolbar: [{ id: 'resync', label: 'Rebuild report', icon: 'fa-solid fa-rotate', method: 'POST', path: '/reports/daily-sales/rebuild', useFilters: true, confirm: 'Rebuild daily totals for the selected period from the raw transactions?', success: 'Rebuild started', summary: 'Recalculate cached daily totals ("Sinkronisasi").', request: { start_date: 'date', end_date: 'date' }, response: { data: { job_id: 'string (uuid)' } } }],
   });
 
   function receiptsTable(rows) {

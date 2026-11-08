@@ -13,8 +13,8 @@
         date: 'date',
         summary: { transaction_count: 'integer', revenue: 'number', profit: 'number', average_basket: 'number', compared_to_previous: { transaction_count: 'number (percent)', revenue: 'number (percent)', profit: 'number (percent)' } },
         hourly: [{ hour: 'string ("00:00"…"23:00")', transaction_count: 'integer', revenue: 'number', profit: 'number' }],
-        top_products: [{ product_id: 'integer', name: 'string', quantity: 'number', revenue: 'number' }],
-        low_stock: [{ product_id: 'integer', name: 'string', stock: 'number', minimum_stock: 'number' }],
+        top_products: [{ product_id: 'string (uuid)', name: 'string', quantity: 'number', revenue: 'number' }],
+        low_stock: [{ product_id: 'string (uuid)', name: 'string', stock: 'number', minimum_stock: 'number' }],
         alerts: [{ type: '"store_location" | "subscription" | "storage" | "info"', message: 'string', action_label: 'string|null', action_route: 'string|null' }],
       } },
     }],
@@ -84,8 +84,8 @@
     kind: 'custom', id: 'missions', title: 'Reward Missions', icon: 'fa-solid fa-list-check',
     endpoints: [
       { method: 'GET', path: '/missions', summary: 'Gamified tasks with progress and rewards.',
-        response: { data: [{ id: 'integer', title: 'string', description: 'string', reward_type: '"coin" | "plugin_trial" | "voucher"', reward_amount: 'number', progress: 'integer', target: 'integer', status: '"in_progress" | "completed" | "claimed" | "expired"', expires_at: 'datetime|null', action_route: 'string|null' }] } },
-      { method: 'POST', path: '/missions/{id}/claim', summary: 'Claim the reward of a completed mission.', response: { data: { id: 'integer', status: '"claimed"', reward_type: 'string', reward_amount: 'number' } } },
+        response: { data: [{ id: 'string (mission code)', code: 'string', title: 'string', description: 'string', reward_type: '"coin" | "plugin_trial" | "voucher"', reward_amount: 'number', progress: 'integer', target: 'integer', status: '"in_progress" | "completed" | "claimed" | "expired"', expires_at: 'datetime|null', action_route: 'string|null' }] } },
+      { method: 'POST', path: '/missions/{id}/claim', summary: 'Claim the reward of a completed mission.', response: { data: { id: 'string (mission code)', status: '"claimed"', reward_type: 'string', reward_amount: 'number' } } },
     ],
     render: async (container) => {
       const E = UI.esc;
