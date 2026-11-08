@@ -34,7 +34,7 @@
   L.sharedEndpoint({
     group: 'Authentication', method: 'POST', path: '/auth/login', auth: false,
     summary: 'Sign in as the owner or a staff member. When two-step verification is on and `otp` is missing, responds 401 with error code `two_factor_required`.',
-    body: { email: 'string', password: 'string', remember_me: 'boolean', otp: 'string? (6 digits, only when 2FA is enabled)' },
+    body: { email: 'string', password: 'string (base64)', remember_me: 'boolean', otp: 'string? (6 digits, only when 2FA is enabled)' },
     response: { data: { access_token: 'string', refresh_token: 'string', token_type: '"Bearer"', expires_in: 'integer (seconds)', user: '<User>' } },
   });
   L.sharedEndpoint({
@@ -50,7 +50,7 @@
   });
   L.sharedEndpoint({
     group: 'Authentication', method: 'PUT', path: '/auth/password', summary: 'Change the signed-in user\'s password.',
-    body: { current_password: 'string', new_password: 'string (min 8)', new_password_confirmation: 'string' },
+    body: { current_password: 'string (base64)', new_password: 'string (base64; min 8 characters decoded)', new_password_confirmation: 'string (base64)' },
     response: { data: { changed: 'boolean' } },
   });
   L.sharedEndpoint({

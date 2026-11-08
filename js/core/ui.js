@@ -7,6 +7,7 @@
  *   type       text | textarea | number | money | percent | email | tel | password | date | datetime |
  *              time | select | multiselect | switch | color | image | file | items | lookup
  *   required   boolean
+ *   encode     false = send a password-type field as typed (PINs); other password fields are sent base64-encoded
  *   options    ['a','b'] or [{ value, label }]           (select / multiselect)
  *   lookup     { endpoint, value: 'id', label: 'name' }  (select options loaded from the API)
  *   fields     sub-fields for type 'items' (array of objects edited as a table)
@@ -379,6 +380,8 @@
     if (f.type === 'switch') return !!v;
     if ((f.type === 'select' || f.type === 'lookup') && f.lookup) return v === '' ? null : castScalar(v);
     if (f.type === 'datetime' && v) return new Date(v).toISOString();
+    // passwords travel base64-encoded; PIN fields opt out with `encode: false`
+    if (f.type === 'password' && f.encode !== false) return v === '' ? null : Api.encodePassword(v);
     return v === '' ? null : v;
   }
 

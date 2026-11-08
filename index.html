@@ -67,7 +67,7 @@
         const btn = form.querySelector('button[type=submit]');
         btn.disabled = true;
         btn.querySelector('[data-label]').textContent = 'Signing in…';
-        const body = { email: form.email.value.trim(), password: form.password.value, remember_me: form.remember_me.checked };
+        const body = { email: form.email.value.trim(), password: Api.encodePassword(form.password.value), remember_me: form.remember_me.checked };
         if (!otpBox.hidden) body.otp = form.otp.value.trim();
         try {
           const r = (await Api.post('/auth/login', body)).data;

@@ -3,6 +3,7 @@
  *  - Sends `Authorization: Bearer <token>` and `X-Branch-Id` (when a branch is selected).
  *  - Expects the JSON envelope documented in ENDPOINTS.md: { data, meta?, summary? } or { error }.
  *  - On 401 it tries one refresh, then sends the user back to the login page.
+ *  - Passwords are sent base64-encoded (UTF-8 bytes, standard alphabet): see `encodePassword`.
  */
 (function (root) {
   const cfg = root.LESTARI_CONFIG;
@@ -21,6 +22,15 @@
       this.code = err.code || 'http_' + status;
       this.fields = err.fields || {};
     }
+  }
+
+  /** Base64-encode a password (UTF-8 safe) the way the backend expects it. Empty stays empty. */
+  function encodePassword(value) {
+    if (value == null || value === '') return value;
+    const bytes = new TextEncoder().encode(String(value));
+    let bin = '';
+    bytes.forEach((b) => { bin += String.fromCharCode(b); });
+    return btoa(bin);
   }
 
   function buildUrl(path, query) {
@@ -128,5 +138,6 @@
     download,
     request,
     goLogin,
+    encodePassword,
   };
 })(window);
