@@ -969,7 +969,7 @@ Get one product.
 
 #### `PUT /products/{id}`
 
-Update a product (send the full object; omitted optional fields are cleared).
+Update a product. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -1571,7 +1571,7 @@ Get one category.
 
 #### `PUT /categories/{id}`
 
-Update a category (send the full object; omitted optional fields are cleared).
+Update a category. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -1764,7 +1764,7 @@ Get one customer.
 
 #### `PUT /customers/{id}`
 
-Update a customer (send the full object; omitted optional fields are cleared).
+Update a customer. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -2102,7 +2102,7 @@ Get one customer type.
 
 #### `PUT /customer-types/{id}`
 
-Update a customer type (send the full object; omitted optional fields are cleared).
+Update a customer type. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -2249,7 +2249,7 @@ Get one supplier.
 
 #### `PUT /suppliers/{id}`
 
-Update a supplier (send the full object; omitted optional fields are cleared).
+Update a supplier. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -2466,7 +2466,7 @@ Get one discount.
 
 #### `PUT /discounts/{id}`
 
-Update a discount (send the full object; omitted optional fields are cleared).
+Update a discount. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -2623,7 +2623,7 @@ Get one tax.
 
 #### `PUT /taxes/{id}`
 
-Update a tax (send the full object; omitted optional fields are cleared).
+Update a tax. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -2781,7 +2781,7 @@ Get one fee.
 
 #### `PUT /fees/{id}`
 
-Update a fee (send the full object; omitted optional fields are cleared).
+Update a fee. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -2909,7 +2909,7 @@ Get one cash drawer.
 
 #### `PUT /cash-drawers/{id}`
 
-Update a cash drawer (send the full object; omitted optional fields are cleared).
+Update a cash drawer. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -3125,7 +3125,7 @@ Get one promotion.
 
 #### `PUT /promotions/{id}`
 
-Update a promotion (send the full object; omitted optional fields are cleared).
+Update a promotion. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -3387,7 +3387,7 @@ Get one commission rule.
 
 #### `PUT /commissions/{id}`
 
-Update a commission rule (send the full object; omitted optional fields are cleared).
+Update a commission rule. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -4045,7 +4045,7 @@ Get one purchase.
 
 #### `PUT /purchases/{id}`
 
-Update a purchase (send the full object; omitted optional fields are cleared).
+Update a purchase. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -4299,7 +4299,7 @@ Get one entry.
 
 #### `PUT /finance-entries/{id}`
 
-Update a entry (send the full object; omitted optional fields are cleared).
+Update a entry. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -6644,7 +6644,7 @@ List branch products.
 
 #### `PUT /branch-products/{id}`
 
-Update a branch product (send the full object; omitted optional fields are cleared).
+Update a branch product. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -7175,7 +7175,7 @@ Get one branch.
 
 #### `PUT /branches/{id}`
 
-Update a branch (send the full object; omitted optional fields are cleared).
+Update a branch. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -8124,7 +8124,7 @@ Get one payment method.
 
 #### `PUT /payment-methods/{id}`
 
-Update a payment method (send the full object; omitted optional fields are cleared).
+Update a payment method. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -8710,7 +8710,7 @@ Get one staff member.
 
 #### `PUT /staff/{id}`
 
-Update a staff member (send the full object; omitted optional fields are cleared).
+Update a staff member. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -9540,7 +9540,7 @@ Get one account.
 
 #### `PUT /catalog/payment-accounts/{id}`
 
-Update a account (send the full object; omitted optional fields are cleared).
+Update a account. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -9740,7 +9740,7 @@ List ppob prepaid prices.
 
 #### `PUT /ppob/prices/prepaid/{id}`
 
-Update a price (send the full object; omitted optional fields are cleared).
+Update a price. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 
@@ -9868,7 +9868,7 @@ List ppob postpaid fees.
 
 #### `PUT /ppob/prices/postpaid/{id}`
 
-Update a price (send the full object; omitted optional fields are cleared).
+Update a price. Only attributes present in the body are written; send null to clear one.
 
 **Path:** `id`
 

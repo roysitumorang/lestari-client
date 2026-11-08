@@ -177,7 +177,7 @@ function pageEndpoints(def) {
     if (ops.includes('list')) add({ method: 'GET', path: base, summary: 'List ' + def.title.toLowerCase() + '.', query: listQuery, response: { data: [res], meta: '<Pagination>' } });
     if (ops.includes('create')) add({ method: 'POST', path: base, summary: 'Create a ' + (def.singular || def.title).toLowerCase() + '.', body, required: req, status: '201 Created', response: { data: res } });
     if (ops.includes('read')) add({ method: 'GET', path: base + '/{' + idKey + '}', summary: 'Get one ' + (def.singular || def.title).toLowerCase() + '.', response: { data: res } });
-    if (ops.includes('update')) add({ method: 'PUT', path: base + '/{' + idKey + '}', summary: 'Update a ' + (def.singular || def.title).toLowerCase() + ' (send the full object; omitted optional fields are cleared).', body, required: req, response: { data: res } });
+    if (ops.includes('update')) add({ method: 'PUT', path: base + '/{' + idKey + '}', summary: 'Update a ' + (def.singular || def.title).toLowerCase() + '. Only attributes present in the body are written; send null to clear one.', body, required: req, response: { data: res } });
     if (ops.includes('delete')) add({ method: 'DELETE', path: base + '/{' + idKey + '}', summary: 'Delete a ' + (def.singular || def.title).toLowerCase() + '.', response: '204 No Content' });
     if (ops.includes('bulk_delete')) add({ method: 'POST', path: base + '/bulk-delete', summary: 'Delete several at once.', body: { ids: ['integer'] }, required: ['`ids`'], response: { data: { deleted: 'integer' } } });
     if (ops.includes('import')) {
