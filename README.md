@@ -27,12 +27,27 @@ HTTPS host, so no CORS setup is needed:
 | `/uploads/…` | uploaded files (via the backend, or straight from its `UPLOAD_DIR`) |
 
 ```bash
+sudo mkdir -p /var/www/lestari-client
 sudo cp -r index.html app.html js css img /var/www/lestari-client/
 sudo cp deploy/nginx/lestari.conf /etc/nginx/conf.d/
 sudo cp deploy/nginx/snippets/lestari-proxy.conf /etc/nginx/snippets/
 # edit server_name + certificate paths, set apiBaseUrl: '/api/v1' in /var/www/lestari-client/js/config.js
 sudo nginx -t && sudo systemctl reload nginx
 ```
+
+For a local test with the example host name, add `127.0.0.1 backoffice.example.com` to `/etc/hosts` and use a
+self-signed certificate (the browser will warn once).
+
+**Getting a 404?**
+
+- `ls /var/www/lestari-client/index.html` — the files must be directly in the `root` folder (not in a subfolder).
+- `sudo nginx -T | grep -nE "server_name|root |listen|include"` — check that `lestari.conf` is actually loaded. Debian/Ubuntu
+  packages include `conf.d/*.conf`; Homebrew (macOS) includes `servers/*` instead, so copy the file there; the official
+  Docker image only includes `conf.d/`.
+- Another `server` with `default_server` or the same `server_name` can catch the request first (e.g.
+  `sites-enabled/default`).
+- `curl -k -I https://backoffice.example.com/` — `Server: nginx` with an HTML 404 page means nginx did not find the file;
+  a JSON `{"error":…}` body means the request reached the backend instead.
 
 Run the backend with `PUBLIC_URL=https://<your host>` so upload links point at the same host. The example also
 redirects HTTP to HTTPS, sends HSTS and a Content-Security-Policy (only `cdn.jsdelivr.net` is allowed besides the
