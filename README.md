@@ -15,6 +15,32 @@ The API contract the backend must implement is in **[ENDPOINTS.md](ENDPOINTS.md)
 2. Serve the folder with any static web server, e.g. `npx serve .` or `python3 -m http.server 5500`, and open `index.html`.
 3. The backend must allow CORS from the client's origin (headers `Authorization`, `Content-Type`, `X-Branch-Id`; expose `Content-Disposition`).
 
+### Deploy with nginx
+
+[`deploy/nginx/lestari.conf`](deploy/nginx/lestari.conf) serves the client and reverse-proxies the backend on one
+HTTPS host, so no CORS setup is needed:
+
+| Path | Goes to |
+|---|---|
+| `/`, `/app.html`, `/js/…` | this folder (e.g. `/var/www/lestari-client`) |
+| `/api/…` | lestari-backend on `127.0.0.1:8080` |
+| `/uploads/…` | uploaded files (via the backend, or straight from its `UPLOAD_DIR`) |
+
+```bash
+sudo cp -r index.html app.html js css img /var/www/lestari-client/
+sudo cp deploy/nginx/lestari.conf /etc/nginx/conf.d/
+sudo cp deploy/nginx/snippets/lestari-proxy.conf /etc/nginx/snippets/
+# edit server_name + certificate paths, set apiBaseUrl: '/api/v1' in /var/www/lestari-client/js/config.js
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Run the backend with `PUBLIC_URL=https://<your host>` so upload links point at the same host. The example also
+redirects HTTP to HTTPS, sends HSTS and a Content-Security-Policy (only `cdn.jsdelivr.net` is allowed besides the
+site itself), gzips text, makes browsers revalidate files on every load (they have no content hashes), hides
+`tools/` and dotfiles, and rate-limits `POST /api/v1/auth/login` per IP. If the API lives on another host instead,
+drop the `/api/` and `/uploads/` locations, set `apiBaseUrl` to that host, add it to `connect-src` in the CSP and
+set the backend's `CORS_ORIGINS` to the client's origin.
+
 ### Try it without a backend
 
 ```bash

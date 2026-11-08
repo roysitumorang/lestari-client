@@ -1,6 +1,7 @@
 /**
  * Lestari client runtime configuration.
- * Change apiBaseUrl to point at your Lestari backend.
+ * Change apiBaseUrl to point at your Lestari backend: an absolute URL, or a same-origin path such as
+ * '/api/v1' when a reverse proxy (see deploy/nginx) serves the client and the API on one host.
  */
 window.LESTARI_CONFIG = {
   appName: 'Lestari Back Office',

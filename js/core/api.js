@@ -34,7 +34,8 @@
   }
 
   function buildUrl(path, query) {
-    const url = new URL(cfg.apiBaseUrl.replace(/\/$/, '') + path);
+    // apiBaseUrl may be absolute (http://api.example.com/api/v1) or same-origin (/api/v1, e.g. behind nginx)
+    const url = new URL(cfg.apiBaseUrl.replace(/\/$/, '') + path, root.location.href);
     if (query) {
       Object.entries(query).forEach(([k, v]) => {
         if (v === undefined || v === null || v === '') return;
