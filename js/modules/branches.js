@@ -3,6 +3,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const lk = L.lookups;
 
   L.register({

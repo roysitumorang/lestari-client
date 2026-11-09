@@ -3,6 +3,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
 
   L.lookups = {
     categories: { endpoint: '/categories', value: 'id', label: 'name' },

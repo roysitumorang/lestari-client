@@ -6,12 +6,13 @@
  *         below?: (container, data) => void   // optional extra section under the form }
  */
 (function (root) {
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   function render(container, def) {
     const tools = (def.toolbar || []).map((a) => Actions.button(a)).join('');
     container.innerHTML = CrudPage.pageHeader(def, tools) +
       (def.info ? '<div class="alert alert-info small">' + def.info + '</div>' : '') +
       '<div class="card"><div class="card-body" data-form>' + UI.spinner() + '</div>' +
-      (def.readOnly ? '' : '<div class="card-footer bg-transparent text-end"><button class="btn btn-primary" data-save disabled><i class="fa-solid fa-floppy-disk me-1"></i>Save changes</button></div>') +
+      (def.readOnly ? '' : '<div class="card-footer bg-transparent text-end"><button class="btn btn-primary" data-save disabled><i class="fa-solid fa-floppy-disk me-1"></i>' + T('Save changes') + '</button></div>') +
       '</div><div data-below class="mt-3"></div>';
 
     let form = null;
@@ -44,7 +45,7 @@
         try {
           const res = await Api.request(def.method || 'PUT', def.endpoint, { body: nest(form.read()) });
           data = res.data || data;
-          UI.toast(def.savedText || 'Settings saved');
+          UI.toast(def.savedText || T('Settings saved'));
           if (def.afterSave) def.afterSave(data);
         } catch (e) {
           if (e.fields) form.setErrors(e.fields);

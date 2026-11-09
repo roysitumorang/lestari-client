@@ -7,6 +7,7 @@
   const cfg = root.LESTARI_CONFIG;
   const K = cfg.storageKeys;
   const E = UI.esc;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
 
   const App = {
     user: null,
@@ -15,6 +16,7 @@
     async start() {
       if (!Api.store.get(K.token)) { location.replace('index.html'); return; }
       this.applyDisplay(safeJson(Api.store.get(K.theme)) || {});
+      I18n.applyDom();
       this.renderSidebar();
       bindShell();
       try {
@@ -34,7 +36,7 @@
       this.user = me;
       Api.store.set(K.user, JSON.stringify(me));
       document.querySelector('[data-user-name]').textContent = me.name || me.email || '';
-      document.querySelector('[data-user-role]').textContent = (me.branch && me.branch.name ? me.branch.name + ' · ' : '') + (me.role || '');
+      document.querySelector('[data-user-role]').textContent = (me.branch && me.branch.name ? me.branch.name + ' · ' : '') + T(me.role || '');
       document.querySelector('[data-store-name]').textContent = (me.store && me.store.name) || cfg.appName;
       if (me.avatar_url) { const a = document.querySelector('[data-avatar]'); a.src = me.avatar_url; a.hidden = false; }
       this.markPlugins();
@@ -58,9 +60,9 @@
         if (rows.length < 2) { box.closest('.dropdown').hidden = true; return; }
         const cur = String(Api.store.get(K.branch) || (this.user.branch && this.user.branch.id) || '');
         box.innerHTML = rows.map((b) => '<li><button class="dropdown-item d-flex justify-content-between' + (String(b.id) === cur ? ' active' : '') + '" data-branch="' + b.id + '">' +
-          E(b.name) + (b.is_head_office ? ' <span class="badge text-bg-light border ms-2">Head office</span>' : '') + '</button></li>').join('');
+          E(b.name) + (b.is_head_office ? ' <span class="badge text-bg-light border ms-2">' + T('Head office') + '</span>' : '') + '</button></li>').join('');
         const current = rows.find((b) => String(b.id) === cur);
-        document.querySelector('[data-branch-label]').textContent = current ? current.name : 'Branch';
+        document.querySelector('[data-branch-label]').textContent = current ? current.name : T('Branch');
         box.closest('.dropdown').hidden = false;
       } catch (_) { box.closest('.dropdown').hidden = true; }
     },
@@ -68,7 +70,7 @@
     switchBranch(id) {
       Api.store.set(K.branch, String(id));
       UI.clearLookups();
-      UI.toast('Switched branch');
+      UI.toast(T('Switched branch'));
       this.refreshUser().then(() => this.route(true)).catch(UI.errorToast);
     },
 
@@ -78,6 +80,16 @@
       document.documentElement.setAttribute('data-bs-theme', theme === 'charcoal' ? 'dark' : 'light');
       document.documentElement.classList.toggle('hide-breadcrumbs', d.show_breadcrumbs === false);
       Api.store.set(K.theme, JSON.stringify(d));
+      // the account's language (Back Office Appearance) wins; I18n reloads the page when it changes
+      if (d.language && I18n.LANGS[d.language]) I18n.setLang(d.language);
+    },
+
+    /** Change language: save it to the account (best effort — staff may not edit settings), then reload. */
+    async setLanguage(l) {
+      const d = Object.assign(safeJson(Api.store.get(K.theme)) || {}, { language: l });
+      Api.store.set(K.theme, JSON.stringify(d));
+      try { await Api.put('/settings/display', { language: l }); } catch (_) { /* keep the local choice */ }
+      I18n.setLang(l);
     },
 
     markPlugins() {
@@ -116,8 +128,8 @@
       // plugin gate
       if (def.plugin && this.user && !(this.user.active_plugins || []).includes(def.plugin)) {
         main.innerHTML = CrudPage.pageHeader(def) + '<div class="card"><div class="card-body text-center py-5"><i class="fa-solid fa-lock fa-2x text-muted mb-3"></i>' +
-          '<h2 class="h5">This feature needs the ' + E(def.plugin) + ' plugin</h2><p class="text-muted">Subscribe or start a 7-day trial to unlock it.</p>' +
-          '<a class="btn btn-primary" href="#/plugins">See plugins</a></div></div>';
+          '<h2 class="h5">' + E(T('This feature needs the {plugin} plugin', { plugin: def.plugin })) + '</h2><p class="text-muted">' + T('Subscribe or start a 7-day trial to unlock it.') + '</p>' +
+          '<a class="btn btn-primary" href="#/plugins">' + T('See plugins') + '</a></div></div>';
         return;
       }
       main.innerHTML = '';
@@ -131,7 +143,7 @@
         else def.render(view, { app: this });
       } catch (e) {
         console.error(e);
-        view.innerHTML = UI.emptyState('This page failed to load: ' + e.message, 'fa-bug');
+        view.innerHTML = UI.emptyState(T('This page failed to load: {error}', { error: e.message }), 'fa-bug');
       }
       main.focus({ preventScroll: true });
       window.scrollTo(0, 0);
@@ -144,7 +156,7 @@
         if (!p) { console.warn('Menu refers to unknown page', id); return ''; }
         return '<li><a class="nav-link depth-' + depth + '" href="#/' + p.id + '" data-page="' + p.id + '"' + (p.plugin ? ' data-nav-plugin="' + p.plugin + '"' : '') + '>' +
           (depth === 0 ? '<i class="' + E(p.icon) + ' fa-fw"></i>' : '') + '<span>' + E(p.title) + '</span>' +
-          (p.plugin ? '<span class="plugin-tag" title="Plugin"><i class="fa-solid fa-crown"></i></span>' : '') + '</a></li>';
+          (p.plugin ? '<span class="plugin-tag" title="' + T('Plugin') + '"><i class="fa-solid fa-crown"></i></span>' : '') + '</a></li>';
       };
       const group = (g, depth) => {
         const cid = 'nav-c' + (++n);
@@ -182,6 +194,8 @@
         Object.values(K).forEach((k) => { if (k !== K.theme) Api.store.set(k, null); });
         location.replace('index.html');
       }
+      const lb = ev.target.closest('[data-lang]');
+      if (lb) { ev.preventDefault(); App.setLanguage(lb.dataset.lang); return; }
       if (ev.target.closest('[data-change-password]')) {
         ev.preventDefault();
         const prof = L.getPage('profile');

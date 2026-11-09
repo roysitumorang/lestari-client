@@ -13,6 +13,7 @@
  * }
  */
 (function (root) {
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const DEFAULT_OPS = ['list', 'create', 'read', 'update', 'delete'];
 
   function listColumns(def) {
@@ -29,11 +30,11 @@
     const E = UI.esc;
 
     const toolbar = [];
-    if (has('create')) toolbar.push('<button class="btn btn-primary" data-op="create"><i class="fa-solid fa-plus me-1"></i>' + E(def.createLabel || 'Add ' + (def.singular || def.title)) + '</button>');
+    if (has('create')) toolbar.push('<button class="btn btn-primary" data-op="create"><i class="fa-solid fa-plus me-1"></i>' + E(def.createLabel || T('Add {item}', { item: def.singular || def.title })) + '</button>');
     (def.toolbar || []).forEach((a) => toolbar.push(Actions.button(a)));
-    if (has('import')) toolbar.push('<button class="btn btn-outline-secondary" data-op="import"><i class="fa-solid fa-file-import me-1"></i>Import</button>');
-    if (has('export')) toolbar.push('<button class="btn btn-outline-secondary" data-op="export"><i class="fa-solid fa-file-export me-1"></i>Export</button>');
-    if (has('bulk_delete')) toolbar.push('<button class="btn btn-outline-danger" data-op="bulk_delete" hidden><i class="fa-solid fa-trash me-1"></i>Delete selected (<span data-count>0</span>)</button>');
+    if (has('import')) toolbar.push('<button class="btn btn-outline-secondary" data-op="import"><i class="fa-solid fa-file-import me-1"></i>' + T('Import') + '</button>');
+    if (has('export')) toolbar.push('<button class="btn btn-outline-secondary" data-op="export"><i class="fa-solid fa-file-export me-1"></i>' + T('Export') + '</button>');
+    if (has('bulk_delete')) toolbar.push('<button class="btn btn-outline-danger" data-op="bulk_delete" hidden><i class="fa-solid fa-trash me-1"></i>' + T('Delete selected') + ' (<span data-count>0</span>)</button>');
 
     const tabs = def.tabs ? '<ul class="nav nav-pills nav-pills-sm mb-3 flex-nowrap overflow-auto" data-tabs>' +
       def.tabs.options.map((o) => '<li class="nav-item"><button class="nav-link text-nowrap' + (String(o.value) === String(state.tab) ? ' active' : '') + '" data-tab="' + E(o.value) + '">' + E(o.label) + '</button></li>').join('') + '</ul>' : '';
@@ -43,12 +44,12 @@
       '<div class="card"><div class="card-body">' + tabs +
       '<div class="row g-2 align-items-end mb-3">' +
       '<div class="col-md-4"><div class="input-group"><span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>' +
-      '<input type="search" class="form-control" data-search placeholder="' + E(def.searchPlaceholder || 'Search') + '" aria-label="Search"></div></div>' +
+      '<input type="search" class="form-control" data-search placeholder="' + E(def.searchPlaceholder || T('Search')) + '" aria-label="' + T('Search') + '"></div></div>' +
       '<div class="col-md-8"><div class="row g-2" data-filters></div></div></div>' +
       '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>' +
-      (has('bulk_delete') ? '<th style="width:1%"><input type="checkbox" class="form-check-input" data-check-all aria-label="Select all"></th>' : '') +
+      (has('bulk_delete') ? '<th style="width:1%"><input type="checkbox" class="form-check-input" data-check-all aria-label="' + T('Select all') + '"></th>' : '') +
       cols.map((c) => '<th' + (c.sortable === false ? '' : ' class="sortable" data-sort="' + E(c.key) + '"') + '>' + E(c.label) + '</th>').join('') +
-      '<th class="text-end">Actions</th></tr></thead><tbody data-body></tbody></table></div>' +
+      '<th class="text-end">' + T('Actions') + '</th></tr></thead><tbody data-body></tbody></table></div>' +
       '<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3" data-pager></div>' +
       '</div></div>';
 
@@ -89,21 +90,21 @@
       state.selected.clear();
       updateBulk();
       if (!state.rows.length) {
-        body.innerHTML = '<tr><td colspan="' + (cols.length + 2) + '">' + UI.emptyState('No ' + def.title.toLowerCase() + ' yet') + '</td></tr>';
+        body.innerHTML = '<tr><td colspan="' + (cols.length + 2) + '">' + UI.emptyState(T('No data yet')) + '</td></tr>';
         return;
       }
       body.innerHTML = state.rows.map((r, i) => {
         const acts = [];
-        if (has('read')) acts.push('<button class="btn btn-sm btn-light" data-row-op="view" data-i="' + i + '" title="Details" aria-label="Details"><i class="fa-regular fa-eye"></i></button>');
-        if (has('update') && !def.readOnly) acts.push('<button class="btn btn-sm btn-light" data-row-op="edit" data-i="' + i + '" title="Edit" aria-label="Edit"><i class="fa-regular fa-pen-to-square"></i></button>');
+        if (has('read')) acts.push('<button class="btn btn-sm btn-light" data-row-op="view" data-i="' + i + '" title="' + T('Details') + '" aria-label="' + T('Details') + '"><i class="fa-regular fa-eye"></i></button>');
+        if (has('update') && !def.readOnly) acts.push('<button class="btn btn-sm btn-light" data-row-op="edit" data-i="' + i + '" title="' + T('Edit') + '" aria-label="' + T('Edit') + '"><i class="fa-regular fa-pen-to-square"></i></button>');
         const extra = (def.rowActions || []).filter((a) => !a.when || a.when(r));
         if (extra.length) {
-          acts.push('<div class="btn-group"><button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More actions"><i class="fa-solid fa-ellipsis"></i></button><ul class="dropdown-menu dropdown-menu-end">' +
+          acts.push('<div class="btn-group"><button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="' + T('More actions') + '"><i class="fa-solid fa-ellipsis"></i></button><ul class="dropdown-menu dropdown-menu-end">' +
             extra.map((a) => '<li><button class="dropdown-item' + (a.variant === 'danger' ? ' text-danger' : '') + '" data-row-action="' + E(a.id) + '" data-i="' + i + '">' + (a.icon ? '<i class="' + E(a.icon) + ' me-2"></i>' : '') + E(a.label) + '</button></li>').join('') + '</ul></div>');
         }
-        if (has('delete') && !def.readOnly) acts.push('<button class="btn btn-sm btn-light text-danger" data-row-op="delete" data-i="' + i + '" title="Delete" aria-label="Delete"><i class="fa-regular fa-trash-can"></i></button>');
+        if (has('delete') && !def.readOnly) acts.push('<button class="btn btn-sm btn-light text-danger" data-row-op="delete" data-i="' + i + '" title="' + T('Delete') + '" aria-label="' + T('Delete') + '"><i class="fa-regular fa-trash-can"></i></button>');
         return '<tr>' +
-          (has('bulk_delete') ? '<td><input type="checkbox" class="form-check-input" data-check="' + i + '" aria-label="Select row"></td>' : '') +
+          (has('bulk_delete') ? '<td><input type="checkbox" class="form-check-input" data-check="' + i + '" aria-label="' + T('Select row') + '"></td>' : '') +
           cols.map((c) => '<td>' + UI.formatValue(c, r) + '</td>').join('') +
           '<td class="text-end text-nowrap">' + acts.join(' ') + '</td></tr>';
       }).join('');
@@ -118,8 +119,8 @@
       const s = Math.max(1, m.page - 2), e = Math.min(pages, s + 4);
       for (let p = s; p <= e; p++) items += btn(p, p, false, p === m.page);
       items += btn(m.page + 1, '<i class="fa-solid fa-chevron-right"></i>', m.page >= pages);
-      pager.innerHTML = '<div class="text-muted small">Showing ' + from + '–' + to + ' of ' + UI.fmt.number(m.total) + '</div>' +
-        '<div class="d-flex align-items-center gap-2"><select class="form-select form-select-sm w-auto" data-per-page aria-label="Rows per page">' +
+      pager.innerHTML = '<div class="text-muted small">' + T('Showing {from}–{to} of {total}', { from, to, total: UI.fmt.number(m.total) }) + '</div>' +
+        '<div class="d-flex align-items-center gap-2"><select class="form-select form-select-sm w-auto" data-per-page aria-label="' + T('Rows per page') + '">' +
         [10, 25, 50, 100].map((n) => '<option' + (n === state.per_page ? ' selected' : '') + '>' + n + '</option>').join('') +
         '</select><ul class="pagination pagination-sm mb-0">' + items + '</ul></div>';
     }
@@ -136,13 +137,13 @@
 
     function openForm(row) {
       UI.formModal({
-        title: (row ? 'Edit ' : 'Add ') + (def.singular || def.title),
+        title: T(row ? 'Edit {item}' : 'Add {item}', { item: def.singular || def.title }),
         fields: def.fields,
         values: row || {},
         onSubmit: async (data) => {
           if (row) await Api.put(def.endpoint + '/' + encodeURIComponent(row[idKey]), data);
           else await Api.post(def.endpoint, data);
-          UI.toast((def.singular || def.title) + (row ? ' updated' : ' created'));
+          UI.toast(T(row ? '{item} updated' : '{item} created', { item: def.singular || def.title }));
           UI.clearLookups();
           load();
         },
@@ -164,9 +165,9 @@
         else if (t.dataset.op === 'import') importDialog(def, load);
         else if (t.dataset.op === 'bulk_delete') {
           const ids = [...state.selected].map((i) => state.rows[i][idKey]);
-          if (await UI.confirm('Delete ' + ids.length + ' selected item(s)? This cannot be undone.', { okText: 'Delete' })) {
+          if (await UI.confirm(T('Delete {n} selected item(s)? This cannot be undone.', { n: ids.length }), { okText: T('Delete') })) {
             await Api.post(def.endpoint + '/bulk-delete', { ids });
-            UI.toast(ids.length + ' item(s) deleted');
+            UI.toast(T('{n} item(s) deleted', { n: ids.length }));
             load();
           }
         } else if (t.dataset.rowOp) {
@@ -175,12 +176,12 @@
           else if (t.dataset.rowOp === 'view') {
             const full = await fetchOne(row);
             const html = def.detail ? def.detail(full) : UI.detailView(def.detailFields || def.fields, full);
-            UI.modal({ title: def.singular || def.title, body: html, size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">Close</button>' });
+            UI.modal({ title: def.singular || def.title, body: html, size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Close') + '</button>' });
           } else if (t.dataset.rowOp === 'delete') {
             const name = UI.get(row, def.titleKey || 'name') || ('#' + row[idKey]);
-            if (await UI.confirm('Delete "' + name + '"? This cannot be undone.', { okText: 'Delete' })) {
+            if (await UI.confirm(T('Delete "{name}"? This cannot be undone.', { name }), { okText: T('Delete') })) {
               await Api.del(def.endpoint + '/' + encodeURIComponent(row[idKey]));
-              UI.toast('Deleted');
+              UI.toast(T('Deleted'));
               load();
             }
           }
@@ -232,17 +233,17 @@
 
   function importDialog(def, reload) {
     const d = UI.modal({
-      title: 'Import ' + def.title,
-      body: '<p class="small text-muted">Upload an .xlsx or .csv file that follows the template.</p>' +
-        '<button type="button" class="btn btn-sm btn-outline-primary mb-3" data-template><i class="fa-solid fa-download me-1"></i>Download template</button>' +
-        (def.importModes ? '<div class="mb-3"><label class="form-label">Mode</label><select class="form-select" data-mode>' + def.importModes.map((m) => '<option value="' + UI.esc(m.value) + '">' + UI.esc(m.label) + '</option>').join('') + '</select></div>' : '') +
-        '<input type="file" class="form-control" accept=".xlsx,.xls,.csv" data-file aria-label="File to import"><div data-result class="mt-3"></div>',
-      footer: '<button class="btn btn-light" data-bs-dismiss="modal">Close</button><button class="btn btn-primary" data-go><i class="fa-solid fa-upload me-1"></i>Upload</button>',
+      title: T('Import {item}', { item: def.title }),
+      body: '<p class="small text-muted">' + T('Upload an .xlsx or .csv file that follows the template.') + '</p>' +
+        '<button type="button" class="btn btn-sm btn-outline-primary mb-3" data-template><i class="fa-solid fa-download me-1"></i>' + T('Download template') + '</button>' +
+        (def.importModes ? '<div class="mb-3"><label class="form-label">' + T('Mode') + '</label><select class="form-select" data-mode>' + def.importModes.map((m) => '<option value="' + UI.esc(m.value) + '">' + UI.esc(m.label) + '</option>').join('') + '</select></div>' : '') +
+        '<input type="file" class="form-control" accept=".xlsx,.xls,.csv" data-file aria-label="' + T('File to import') + '"><div data-result class="mt-3"></div>',
+      footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Close') + '</button><button class="btn btn-primary" data-go><i class="fa-solid fa-upload me-1"></i>' + T('Upload') + '</button>',
     });
     d.el.querySelector('[data-template]').addEventListener('click', () => Api.download(def.endpoint + '/import-template', {}, def.id + '-template.xlsx').catch(UI.errorToast));
     d.el.querySelector('[data-go]').addEventListener('click', async (ev) => {
       const file = d.el.querySelector('[data-file]').files[0];
-      if (!file) { UI.toast('Choose a file first', 'warning'); return; }
+      if (!file) { UI.toast(T('Choose a file first'), 'warning'); return; }
       const fd = new FormData();
       fd.append('file', file);
       const mode = d.el.querySelector('[data-mode]');
@@ -250,8 +251,8 @@
       ev.target.disabled = true;
       try {
         const r = (await Api.upload(def.endpoint + '/import', fd)).data || {};
-        d.el.querySelector('[data-result]').innerHTML = '<div class="alert alert-' + (r.failed ? 'warning' : 'success') + ' mb-0">Created ' + (r.created || 0) + ', updated ' + (r.updated || 0) + ', failed ' + (r.failed || 0) + '.' +
-          ((r.errors || []).length ? '<ul class="mb-0 mt-2 small">' + r.errors.slice(0, 20).map((x) => '<li>Row ' + x.row + ': ' + UI.esc(x.message) + '</li>').join('') + '</ul>' : '') + '</div>';
+        d.el.querySelector('[data-result]').innerHTML = '<div class="alert alert-' + (r.failed ? 'warning' : 'success') + ' mb-0">' + T('Created {created}, updated {updated}, failed {failed}.', { created: r.created || 0, updated: r.updated || 0, failed: r.failed || 0 }) +
+          ((r.errors || []).length ? '<ul class="mb-0 mt-2 small">' + r.errors.slice(0, 20).map((x) => '<li>' + T('Row {row}', { row: x.row }) + ': ' + UI.esc(x.message) + '</li>').join('') + '</ul>' : '') + '</div>';
         reload();
       } catch (e) { UI.errorToast(e); } finally { ev.target.disabled = false; }
     });
@@ -259,8 +260,8 @@
 
   function pageHeader(def, toolbarHtml) {
     return '<div class="page-head d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">' +
-      '<div><h1 class="h4 mb-1">' + (def.icon ? '<i class="' + UI.esc(def.icon) + ' me-2 text-primary"></i>' : '') + UI.esc(def.title) + '</h1>' +
-      (def.description ? '<p class="text-muted mb-0 small">' + UI.esc(def.description) + '</p>' : '') + '</div>' +
+      '<div><h1 class="h4 mb-1">' + (def.icon ? '<i class="' + UI.esc(def.icon) + ' me-2 text-primary"></i>' : '') + UI.esc(T(def.title)) + '</h1>' +
+      (def.description ? '<p class="text-muted mb-0 small">' + UI.esc(T(def.description)) + '</p>' : '') + '</div>' +
       '<div class="d-flex flex-wrap gap-2">' + (toolbarHtml || '') + '</div></div>';
   }
 

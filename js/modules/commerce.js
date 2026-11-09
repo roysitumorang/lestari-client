@@ -3,6 +3,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const lk = L.lookups;
 
   // ---------- E-catalog ----------
@@ -147,7 +148,7 @@
     ],
     below: (box, data) => {
       const rows = data.referred_businesses || [];
-      box.innerHTML = '<div class="card"><div class="card-body"><h2 class="h6">Referred businesses</h2>' + (rows.length ? '<table class="table table-sm mb-0"><thead><tr><th>Store</th><th>Joined</th><th>Status</th><th class="text-end">Reward</th></tr></thead><tbody>' +
+      box.innerHTML = '<div class="card"><div class="card-body"><h2 class="h6">' + T('Referred businesses') + '</h2>' + (rows.length ? '<table class="table table-sm mb-0"><thead><tr><th>' + T('Store') + '</th><th>' + T('Joined') + '</th><th>' + T('Status') + '</th><th class="text-end">' + T('Reward') + '</th></tr></thead><tbody>' +
         rows.map((r) => '<tr><td>' + UI.esc(r.store_name) + '</td><td>' + UI.fmt.date(r.joined_at) + '</td><td>' + UI.fmt.badge(r.status) + '</td><td class="text-end">' + UI.fmt.money(r.reward_amount) + '</td></tr>').join('') + '</tbody></table>' : UI.emptyState('No referrals yet', 'fa-user-plus')) + '</div></div>';
     },
     responseNote: 'data also includes referred_businesses: [{ store_name, joined_at, status, reward_amount }].',
@@ -165,8 +166,8 @@
       title: 'Integrations', icon: 'fa-solid fa-plug', description: 'Connect payment providers and accounting software.', endpoint: '/integrations',
       card: (i) => '<div class="d-flex align-items-center gap-3 mb-2">' + (i.logo_url ? '<img src="' + UI.esc(i.logo_url) + '" alt="" class="thumb">' : '') + '<h2 class="h6 mb-0">' + UI.esc(i.name) + '</h2><span class="badge text-bg-light border ms-auto">' + UI.esc(i.status) + '</span></div>' +
         '<p class="small text-muted">' + UI.esc(i.description) + '</p>' +
-        '<div class="mt-auto">' + (i.status === 'inactive' ? '<button class="btn btn-sm btn-primary" data-on="' + UI.esc(i.code) + '">Connect</button>' : '<button class="btn btn-sm btn-outline-danger" data-off="' + UI.esc(i.code) + '">Disconnect</button>') +
-        (i.terms_url ? ' <a class="btn btn-sm btn-link" target="_blank" rel="noopener" href="' + UI.esc(i.terms_url) + '">Terms</a>' : '') + '</div>',
+        '<div class="mt-auto">' + (i.status === 'inactive' ? '<button class="btn btn-sm btn-primary" data-on="' + UI.esc(i.code) + '">' + T('Connect') + '</button>' : '<button class="btn btn-sm btn-outline-danger" data-off="' + UI.esc(i.code) + '">' + T('Disconnect') + '</button>') +
+        (i.terms_url ? ' <a class="btn btn-sm btn-link" target="_blank" rel="noopener" href="' + UI.esc(i.terms_url) + '">' + T('Terms') + '</a>' : '') + '</div>',
       onClick: async (ev, reload) => {
         const on = ev.target.closest('[data-on]'); const off = ev.target.closest('[data-off]');
         if (on && await UI.confirm('I have read and accept the terms of service of this integration.', { title: 'Connect', okText: 'Accept & connect', variant: 'primary' })) {
@@ -192,13 +193,13 @@
       title: 'Business Loans', icon: 'fa-solid fa-hand-holding-dollar', description: 'Working-capital loans from our lending partners, based on your sales history.', endpoint: '/loans/providers',
       card: (p) => '<div class="d-flex align-items-center gap-3 mb-2">' + (p.logo_url ? '<img src="' + UI.esc(p.logo_url) + '" alt="" class="thumb">' : '') + '<h2 class="h6 mb-0">' + UI.esc(p.name) + '</h2></div>' +
         '<p class="small text-muted">' + UI.esc(p.description) + '</p><p class="small mb-2">' + UI.fmt.money(p.min_amount) + ' – ' + UI.fmt.money(p.max_amount) + '<br>' + UI.esc(p.interest_info || '') + '</p>' +
-        '<div class="mt-auto"><button class="btn btn-sm btn-primary" data-apply="' + UI.esc(p.code) + '">Apply</button>' + (p.info_url ? ' <a class="btn btn-sm btn-link" target="_blank" rel="noopener" href="' + UI.esc(p.info_url) + '">Details</a>' : '') + '</div>',
+        '<div class="mt-auto"><button class="btn btn-sm btn-primary" data-apply="' + UI.esc(p.code) + '">' + T('Apply') + '</button>' + (p.info_url ? ' <a class="btn btn-sm btn-link" target="_blank" rel="noopener" href="' + UI.esc(p.info_url) + '">' + T('Details') + '</a>' : '') + '</div>',
       onClick: (ev, reload, rows) => {
         const b = ev.target.closest('[data-apply]');
         if (!b) return;
         const p = rows.find((x) => x.code === b.dataset.apply);
         UI.formModal({
-          title: 'Apply · ' + p.name, submitText: 'Submit application',
+          title: T('Apply') + ' · ' + p.name, submitText: 'Submit application',
           fields: [
             { key: 'amount', label: 'Amount', type: 'money', required: true, min: p.min_amount, max: p.max_amount },
             { key: 'tenor_months', label: 'Tenor', type: 'select', required: true, options: (p.tenors_months || []).map((t) => ({ value: t, label: t + ' months' })) },
@@ -237,7 +238,7 @@
     endpoint: '/notifications', ops: ['list', 'read'], readOnly: true, titleKey: 'title', defaultSort: 'created_at', defaultOrder: 'desc',
     tabs: { key: 'source', options: [{ value: '', label: 'All' }, { value: 'back_office', label: 'Back office' }, { value: 'online_store', label: 'Online store' }] },
     filters: [{ key: 'start_date', label: 'From', type: 'date' }, { key: 'end_date', label: 'To', type: 'date' }],
-    columns: [{ key: 'created_at', label: 'Time', format: 'datetime' }, { key: 'title', label: 'Title' }, { key: 'message', label: 'Message' }, { key: 'read_at', label: 'Read', render: (v) => (v ? '<i class="fa-solid fa-check text-success" aria-label="Read"></i>' : '<span class="badge text-bg-primary">New</span>') }],
+    columns: [{ key: 'created_at', label: 'Time', format: 'datetime' }, { key: 'title', label: 'Title' }, { key: 'message', label: 'Message' }, { key: 'read_at', label: 'Read', render: (v) => (v ? '<i class="fa-solid fa-check text-success" aria-label="Read"></i>' : '<span class="badge text-bg-primary">' + T('New') + '</span>') }],
     fields: [{ key: 'title', label: 'Title' }, { key: 'message', label: 'Message' }, { key: 'created_at', label: 'Time', type: 'datetime' }, { key: 'source', label: 'Source' }, { key: 'link_route', label: 'Related page' }, { key: 'attachment_url', label: 'Attachment', type: 'image' }],
     toolbar: [{ id: 'read_all', label: 'Mark all as read', icon: 'fa-solid fa-check-double', method: 'POST', path: '/notifications/read-all', success: 'All marked as read', after: () => App.refreshBadge(), response: { data: { updated: 'integer' } } }],
     rowActions: [

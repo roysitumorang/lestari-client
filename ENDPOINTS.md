@@ -18,7 +18,8 @@ This is the contract the HTML client expects from the Lestari backend. It covers
 | Money | plain JSON numbers in the store currency (IDR has no decimals). Percentages are 0–100. |
 | Nullable | any field not marked required may be `null`. |
 | Files | export/download endpoints return the file body with `Content-Disposition: attachment; filename="…"`. Images are uploaded first with `POST /uploads`; forms then store the returned URL. |
-| CORS | the client is a static site, so the API must allow its origin, the `Authorization`, `X-Branch-Id` and `Content-Type` headers, and expose `Content-Disposition`. |
+| Language | every request sends `Accept-Language: en` or `Accept-Language: id` (the language picked in the client). Error messages, notifications and generated documents (receipts, invoices, exports) come back in that language; without the header the account's `/settings/display` `language` is used, then English. |
+| CORS | the client is a static site, so the API must allow its origin, the `Authorization`, `X-Branch-Id`, `Accept-Language` and `Content-Type` headers, and expose `Content-Disposition`. |
 
 ### Response envelope
 

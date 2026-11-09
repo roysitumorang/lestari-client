@@ -22,12 +22,14 @@
     if (!def || !def.id) throw new Error('Page definition needs an id');
     if (pages.has(def.id)) throw new Error('Duplicate page id: ' + def.id);
     def.kind = def.kind || 'custom';
+    if (root.I18n) root.I18n.translateDef(def);
     pages.set(def.id, def);
     return def;
   };
 
   /** Declare a sidebar group (order of calls = order in the menu). */
   Lestari.group = function group(def) {
+    if (root.I18n) root.I18n.translateDef(def);
     groups.push(def);
     return def;
   };

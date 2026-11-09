@@ -1,6 +1,7 @@
 /**
  * Thin fetch wrapper for the Lestari backend.
- *  - Sends `Authorization: Bearer <token>` and `X-Branch-Id` (when a branch is selected).
+ *  - Sends `Authorization: Bearer <token>`, `X-Branch-Id` (when a branch is selected) and
+ *    `Accept-Language` (en / id) so server messages and documents follow the chosen language.
  *  - Expects the JSON envelope documented in ENDPOINTS.md: { data, meta?, summary? } or { error }.
  *  - On 401 it tries one refresh, then sends the user back to the login page.
  *  - Passwords are sent base64-encoded (UTF-8 bytes, standard alphabet): see `encodePassword`.
@@ -52,6 +53,7 @@
     const branch = store.get(K.branch);
     if (token) h.Authorization = 'Bearer ' + token;
     if (branch) h['X-Branch-Id'] = branch;
+    h['Accept-Language'] = root.I18n ? root.I18n.lang : 'en';
     return h;
   }
 

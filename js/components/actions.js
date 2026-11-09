@@ -16,6 +16,7 @@
  *   }
  */
 (function (root) {
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   function fillPath(path, row) {
     return path.replace(/\{(\w+)\}/g, (_, k) => encodeURIComponent(UI.get(row || {}, k)));
   }
@@ -37,7 +38,7 @@
       } else {
         res = await Api.request(action.method || 'POST', path, body === undefined ? {} : { body });
       }
-      UI.toast(action.success || 'Done');
+      UI.toast(action.success || T('Done'));
       if (action.after) action.after(res, row, ctx);
       if (action.reload !== false && ctx && ctx.reload) ctx.reload();
       return res;

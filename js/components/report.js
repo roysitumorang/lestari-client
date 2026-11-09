@@ -14,10 +14,11 @@
  * }
  */
 (function (root) {
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const PRESETS = [
     ['today', 'Today'], ['yesterday', 'Yesterday'], ['last_7_days', 'Last 7 days'], ['last_30_days', 'Last 30 days'],
     ['this_month', 'This month'], ['last_month', 'Last month'], ['this_year', 'This year'], ['custom', 'Custom'],
-  ];
+  ].map(([v, l]) => [v, T(l)]);
 
   function presetRange(p) {
     const d = new Date(); const s = new Date(d); const e = new Date(d);
@@ -42,23 +43,23 @@
 
     const tools = [];
     (def.toolbar || []).forEach((a) => tools.push(Actions.button(a)));
-    if (def.export !== false) tools.push('<button class="btn btn-outline-secondary" data-export><i class="fa-solid fa-file-arrow-down me-1"></i>Download report</button>');
+    if (def.export !== false) tools.push('<button class="btn btn-outline-secondary" data-export><i class="fa-solid fa-file-arrow-down me-1"></i>' + T('Download report') + '</button>');
 
     container.innerHTML = CrudPage.pageHeader(def, tools.join('')) +
       '<div class="card mb-3"><div class="card-body"><div class="row g-2 align-items-end">' +
-      (useDates ? '<div class="col-sm-6 col-lg-3"><label class="form-label small">Period</label><select class="form-select" data-preset>' +
+      (useDates ? '<div class="col-sm-6 col-lg-3"><label class="form-label small">' + T('Period') + '</label><select class="form-select" data-preset>' +
         PRESETS.map(([v, l]) => '<option value="' + v + '"' + (v === (def.defaultPreset || 'today') ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></div>' +
-        '<div class="col-6 col-lg-2"><label class="form-label small">From</label><input type="date" class="form-control" data-start value="' + s0 + '"></div>' +
-        '<div class="col-6 col-lg-2"><label class="form-label small">To</label><input type="date" class="form-control" data-end value="' + e0 + '"></div>' : '') +
-      (def.groupBy ? '<div class="col-sm-6 col-lg-2"><label class="form-label small">' + E(def.groupBy.label || 'Group by') + '</label><select class="form-select" data-group>' +
+        '<div class="col-6 col-lg-2"><label class="form-label small">' + T('From') + '</label><input type="date" class="form-control" data-start value="' + s0 + '"></div>' +
+        '<div class="col-6 col-lg-2"><label class="form-label small">' + T('To') + '</label><input type="date" class="form-control" data-end value="' + e0 + '"></div>' : '') +
+      (def.groupBy ? '<div class="col-sm-6 col-lg-2"><label class="form-label small">' + E(def.groupBy.label || T('Group by')) + '</label><select class="form-select" data-group>' +
         def.groupBy.options.map((o) => '<option value="' + E(o.value) + '">' + E(o.label) + '</option>').join('') + '</select></div>' : '') +
       '<div class="col" data-filters></div>' +
-      '<div class="col-auto"><button class="btn btn-primary" data-apply><i class="fa-solid fa-filter me-1"></i>Apply</button></div>' +
+      '<div class="col-auto"><button class="btn btn-primary" data-apply><i class="fa-solid fa-filter me-1"></i>' + T('Apply') + '</button></div>' +
       '</div></div></div>' +
       (def.summary ? '<div class="row g-3 mb-3" data-summary></div>' : '') +
-      (def.chart ? '<div class="card mb-3"><div class="card-body"><h2 class="h6 mb-3">' + E(def.chart.title || 'Chart') + '</h2><div data-chart></div></div></div>' : '') +
+      (def.chart ? '<div class="card mb-3"><div class="card-body"><h2 class="h6 mb-3">' + E(def.chart.title || T('Chart')) + '</h2><div data-chart></div></div></div>' : '') +
       '<div class="card"><div class="card-body">' +
-      (def.search ? '<div class="mb-3" style="max-width:360px"><input type="search" class="form-control" data-search placeholder="' + E(def.search) + '" aria-label="Search"></div>' : '') +
+      (def.search ? '<div class="mb-3" style="max-width:360px"><input type="search" class="form-control" data-search placeholder="' + E(def.search) + '" aria-label="' + T('Search') + '"></div>' : '') +
       '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>' +
       def.columns.map((c) => '<th class="' + (['money', 'number', 'percent'].includes(c.format) ? 'text-end' : '') + '">' + E(c.label) + '</th>').join('') +
       (def.detail || def.rowActions ? '<th></th>' : '') + '</tr></thead><tbody data-body></tbody><tfoot data-foot></tfoot></table></div>' +
@@ -98,19 +99,19 @@
         body.innerHTML = state.rows.length ? state.rows.map((r, i) => '<tr>' + def.columns.map((c) =>
           '<td class="' + (['money', 'number', 'percent'].includes(c.format) ? 'text-end' : '') + '">' + UI.formatValue(c, r) + '</td>').join('') +
           (def.detail || def.rowActions ? '<td class="text-end text-nowrap">' +
-            (def.detail ? '<button class="btn btn-sm btn-light" data-detail="' + i + '" aria-label="Details"><i class="fa-regular fa-eye"></i></button> ' : '') +
+            (def.detail ? '<button class="btn btn-sm btn-light" data-detail="' + i + '" aria-label="' + T('Details') + '"><i class="fa-regular fa-eye"></i></button> ' : '') +
             (def.rowActions || []).filter((a) => !a.when || a.when(r)).map((a) => '<button class="btn btn-sm btn-light" data-row-action="' + E(a.id) + '" data-i="' + i + '" title="' + E(a.label) + '" aria-label="' + E(a.label) + '"><i class="' + E(a.icon || 'fa-solid fa-bolt') + '"></i></button>').join(' ') +
             '</td>' : '') + '</tr>').join('')
-          : '<tr><td colspan="' + span + '">' + UI.emptyState('No data for this period', 'fa-file-circle-question') + '</td></tr>';
+          : '<tr><td colspan="' + span + '">' + UI.emptyState(T('No data for this period'), 'fa-file-circle-question') + '</td></tr>';
         if (res.totals) {
           foot.innerHTML = '<tr class="table-light fw-semibold">' + def.columns.map((c, i) =>
-            '<td class="' + (['money', 'number', 'percent'].includes(c.format) ? 'text-end' : '') + '">' + (res.totals[c.key] !== undefined ? UI.formatValue(c, res.totals) : (i === 0 ? 'Total' : '')) + '</td>').join('') + (def.detail || def.rowActions ? '<td></td>' : '') + '</tr>';
+            '<td class="' + (['money', 'number', 'percent'].includes(c.format) ? 'text-end' : '') + '">' + (res.totals[c.key] !== undefined ? UI.formatValue(c, res.totals) : (i === 0 ? T('Total') : '')) + '</td>').join('') + (def.detail || def.rowActions ? '<td></td>' : '') + '</tr>';
         }
         const m = res.meta;
         if (paginated && m && m.total_pages > 1) {
-          pager.innerHTML = '<div class="small text-muted">Page ' + m.page + ' of ' + m.total_pages + ' · ' + UI.fmt.number(m.total) + ' rows</div>' +
-            '<div class="btn-group"><button class="btn btn-sm btn-outline-secondary" data-page="' + (m.page - 1) + '"' + (m.page <= 1 ? ' disabled' : '') + '>Previous</button>' +
-            '<button class="btn btn-sm btn-outline-secondary" data-page="' + (m.page + 1) + '"' + (m.page >= m.total_pages ? ' disabled' : '') + '>Next</button></div>';
+          pager.innerHTML = '<div class="small text-muted">' + T('Page {page} of {pages} · {total} rows', { page: m.page, pages: m.total_pages, total: UI.fmt.number(m.total) }) + '</div>' +
+            '<div class="btn-group"><button class="btn btn-sm btn-outline-secondary" data-page="' + (m.page - 1) + '"' + (m.page <= 1 ? ' disabled' : '') + '>' + T('Previous') + '</button>' +
+            '<button class="btn btn-sm btn-outline-secondary" data-page="' + (m.page + 1) + '"' + (m.page >= m.total_pages ? ' disabled' : '') + '>' + T('Next') + '</button></div>';
         } else pager.innerHTML = '';
       } catch (e) {
         body.innerHTML = '<tr><td colspan="' + span + '">' + UI.emptyState(e.message, 'fa-triangle-exclamation') + '</td></tr>';
@@ -152,7 +153,7 @@
         } else if (t.dataset.detail) {
           const row = state.rows[Number(t.dataset.detail)];
           const path = Actions.fillPath(def.detail.endpoint, row);
-          const d = UI.modal({ title: def.detail.title || 'Details', body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">Close</button>' });
+          const d = UI.modal({ title: def.detail.title || T('Details'), body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Close') + '</button>' });
           try {
             const res = await Api.get(path);
             d.body.innerHTML = def.detail.render ? def.detail.render(res.data) : UI.detailView(def.detail.fields, res.data);

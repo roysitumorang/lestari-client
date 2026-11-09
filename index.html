@@ -13,31 +13,31 @@
   <main class="login-wrap">
     <section class="login-card card">
       <div class="card-body p-4 p-md-5">
-        <div class="brand brand-dark mb-4"><span class="brand-mark"><i class="fa-solid fa-leaf"></i></span><span>Lestari</span></div>
-        <h1 class="h4 mb-1">Sign in to the back office</h1>
-        <p class="text-muted small mb-4">Owner or staff account.</p>
+        <div class="d-flex justify-content-between align-items-start mb-4"><div class="brand brand-dark"><span class="brand-mark"><i class="fa-solid fa-leaf"></i></span><span>Lestari</span></div><div data-lang-switch></div></div>
+        <h1 class="h4 mb-1" data-i18n="Sign in to the back office">Sign in to the back office</h1>
+        <p class="text-muted small mb-4" data-i18n="Owner or staff account.">Owner or staff account.</p>
         <div class="alert alert-danger small" role="alert" data-error hidden></div>
         <form data-login novalidate>
           <div class="mb-3">
-            <label class="form-label" for="email">Email</label>
+            <label class="form-label" for="email" data-i18n="Email">Email</label>
             <input class="form-control" id="email" name="email" type="email" autocomplete="username" required>
           </div>
           <div class="mb-3">
-            <label class="form-label" for="password">Password</label>
+            <label class="form-label" for="password" data-i18n="Password">Password</label>
             <div class="input-group">
               <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
-              <button class="btn btn-outline-secondary" type="button" data-toggle-pw aria-label="Show password"><i class="fa-regular fa-eye"></i></button>
+              <button class="btn btn-outline-secondary" type="button" data-toggle-pw aria-label="Show password" data-i18n-aria-label="Show password"><i class="fa-regular fa-eye"></i></button>
             </div>
           </div>
           <div class="mb-3" data-otp-box hidden>
-            <label class="form-label" for="otp">Two-step verification code</label>
+            <label class="form-label" for="otp" data-i18n="Two-step verification code">Two-step verification code</label>
             <input class="form-control" id="otp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
           </div>
           <div class="form-check mb-4">
             <input class="form-check-input" type="checkbox" id="remember" name="remember_me" checked>
-            <label class="form-check-label" for="remember">Keep me signed in</label>
+            <label class="form-check-label" for="remember" data-i18n="Keep me signed in">Keep me signed in</label>
           </div>
-          <button class="btn btn-primary w-100" type="submit"><span data-label>Sign in</span></button>
+          <button class="btn btn-primary w-100" type="submit"><span data-label data-i18n="Sign in">Sign in</span></button>
         </form>
         <p class="small text-muted mt-4 mb-0">API: <code data-api></code></p>
       </div>
@@ -46,6 +46,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/i18n/id.js"></script>
+  <script src="js/core/i18n.js"></script>
   <script src="js/core/api.js"></script>
   <script src="js/login.js"></script>
 </body>

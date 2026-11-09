@@ -32,6 +32,8 @@
     return String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
   }
 
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
+
   const fmt = {
     money: (v) => (v == null || v === '' ? '-' : cf.format(Number(v))),
     number: (v) => (v == null || v === '' ? '-' : nf.format(Number(v))),
@@ -39,9 +41,9 @@
     date: (v) => (v ? new Date(v).toLocaleDateString(cfg.locale, { day: '2-digit', month: 'short', year: 'numeric' }) : '-'),
     datetime: (v) => (v ? new Date(v).toLocaleString(cfg.locale, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'),
     time: (v) => v || '-',
-    boolean: (v) => (v ? '<span class="badge text-bg-success">Yes</span>' : '<span class="badge text-bg-secondary">No</span>'),
+    boolean: (v) => (v ? '<span class="badge text-bg-success">' + T('Yes') + '</span>' : '<span class="badge text-bg-secondary">' + T('No') + '</span>'),
     switch: (v) => fmt.boolean(v),
-    badge: (v) => (v ? '<span class="badge text-bg-light border">' + esc(v) + '</span>' : '-'),
+    badge: (v) => (v ? '<span class="badge text-bg-light border">' + esc(T(String(v))) + '</span>' : '-'),
     image: (v) => (v ? '<img src="' + esc(v) + '" alt="" class="thumb">' : '<span class="thumb thumb-empty"><i class="fa-regular fa-image"></i></span>'),
     list: (v) => (Array.isArray(v) ? esc(v.map((x) => (typeof x === 'object' ? x.name || x.label || x.id : x)).join(', ')) : '-'),
     text: (v) => (v == null || v === '' ? '-' : esc(v)),
@@ -59,11 +61,12 @@
   }
 
   function normOptions(options) {
-    return (options || []).map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+    return (options || []).map((o) => (typeof o === 'object' ? Object.assign({}, o, { label: T(o.label) }) : { value: o, label: T(String(o)) }));
   }
 
   /* ---------- toasts ---------- */
   function toast(message, variant) {
+    message = T(message);
     let box = document.getElementById('toast-box');
     if (!box) {
       box = document.createElement('div');
@@ -74,8 +77,8 @@
     const el = document.createElement('div');
     el.className = 'toast align-items-center border-0 text-bg-' + (variant || 'success');
     el.setAttribute('role', 'status');
-    el.innerHTML = '<div class="d-flex"><div class="toast-body">' + esc(message) + '</div>' +
-      '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+    el.innerHTML = '<div class="d-flex"><div class="toast-body">' + esc(T(message)) + '</div>' +
+      '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="' + T('Close') + '"></button></div>';
     box.appendChild(el);
     const t = new bootstrap.Toast(el, { delay: 3500 });
     el.addEventListener('hidden.bs.toast', () => el.remove());
@@ -83,7 +86,7 @@
   }
 
   function errorToast(e) {
-    toast(e && e.message ? e.message : 'Something went wrong', 'danger');
+    toast(e && e.message ? e.message : T('Something went wrong'), 'danger');
   }
 
   /* ---------- generic modal ---------- */
@@ -94,8 +97,8 @@
     el.innerHTML =
       '<div class="modal-dialog modal-dialog-scrollable ' + (size ? 'modal-' + size : '') + '">' +
       '<div class="modal-content">' +
-      '<div class="modal-header"><h5 class="modal-title">' + esc(title) + '</h5>' +
-      '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>' +
+      '<div class="modal-header"><h5 class="modal-title">' + esc(T(title)) + '</h5>' +
+      '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="' + T('Close') + '"></button></div>' +
       '<div class="modal-body"></div>' +
       (footer === false ? '' : '<div class="modal-footer"></div>') +
       '</div></div>';
@@ -110,17 +113,17 @@
     return { el, modal: m, body: bodyEl, close: () => m.hide() };
   }
 
-  function confirmDialog(message, { title = 'Confirm', okText = 'Yes', variant = 'danger', typeToConfirm } = {}) {
+  function confirmDialog(message, { title = T('Confirm'), okText = T('Yes'), variant = 'danger', typeToConfirm } = {}) {
     return new Promise((resolve) => {
       let done = false;
       const extra = typeToConfirm
-        ? '<label class="form-label mt-3 small">Type <code>' + esc(typeToConfirm) + '</code> to continue</label><input class="form-control" data-confirm-input>'
+        ? '<label class="form-label mt-3 small">' + T('Type {word} to continue', { word: '<code>' + esc(typeToConfirm) + '</code>' }) + '</label><input class="form-control" data-confirm-input>'
         : '';
       const d = modal({
         title,
-        body: '<p class="mb-0">' + esc(message) + '</p>' + extra,
-        footer: '<button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>' +
-          '<button class="btn btn-' + variant + '" data-ok ' + (typeToConfirm ? 'disabled' : '') + '>' + esc(okText) + '</button>',
+        body: '<p class="mb-0">' + esc(T(message)) + '</p>' + extra,
+        footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Cancel') + '</button>' +
+          '<button class="btn btn-' + variant + '" data-ok ' + (typeToConfirm ? 'disabled' : '') + '>' + esc(T(okText)) + '</button>',
       });
       const ok = d.el.querySelector('[data-ok]');
       const inp = d.el.querySelector('[data-confirm-input]');
@@ -149,10 +152,10 @@
     const id = 'f' + (++uid);
     const req = f.required ? ' required' : '';
     const ro = f.readonly ? ' readonly' : '';
-    const ph = f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : '';
+    const ph = f.placeholder ? ' placeholder="' + esc(T(f.placeholder)) + '"' : '';
     const v = value === undefined ? f.default : value;
-    const label = '<label class="form-label" for="' + id + '">' + esc(f.label) + (f.required ? ' <span class="text-danger">*</span>' : '') + '</label>';
-    const help = f.help ? '<div class="form-text">' + esc(f.help) + '</div>' : '';
+    const label = '<label class="form-label" for="' + id + '">' + esc(T(f.label)) + (f.required ? ' <span class="text-danger">*</span>' : '') + '</label>';
+    const help = f.help ? '<div class="form-text">' + esc(T(f.help)) + '</div>' : '';
     const num = ' step="' + (f.step || 'any') + '"' + (f.min != null ? ' min="' + f.min + '"' : '') + (f.max != null ? ' max="' + f.max + '"' : '');
     let input;
     switch (f.type) {
@@ -169,20 +172,20 @@
       case 'lookup': {
         const opts = normOptions(f.options).map((o) => '<option value="' + esc(o.value) + '"' + (String(o.value) === String(v) ? ' selected' : '') + '>' + esc(o.label) + '</option>').join('');
         input = '<select class="form-select" id="' + id + '" name="' + f.key + '"' + req + (f.readonly ? ' disabled' : '') + (f.lookup ? ' data-lookup="1" data-value="' + esc(v == null ? '' : v) + '"' : '') + '>' +
-          '<option value="">' + esc(f.placeholder || '— Select —') + '</option>' + opts + '</select>';
+          '<option value="">' + esc(T(f.placeholder) || T('— Select —')) + '</option>' + opts + '</select>';
         break;
       }
       case 'multiselect': {
         const sel = Array.isArray(v) ? v.map(String) : [];
         const opts = normOptions(f.options).map((o) => '<option value="' + esc(o.value) + '"' + (sel.includes(String(o.value)) ? ' selected' : '') + '>' + esc(o.label) + '</option>').join('');
         input = '<select multiple class="form-select" size="5" id="' + id + '" name="' + f.key + '"' + req + (f.lookup ? ' data-lookup="1" data-value="' + esc(JSON.stringify(sel)) + '"' : '') + '>' + opts + '</select>' +
-          '<div class="form-text">Hold Ctrl / Cmd to pick several.</div>';
+          '<div class="form-text">' + T('Hold Ctrl / Cmd to pick several.') + '</div>';
         break;
       }
       case 'switch':
         return '<div class="col-md-' + (f.col || 6) + ' field" data-key="' + f.key + '"><div class="form-check form-switch mt-md-4">' +
           '<input class="form-check-input" type="checkbox" role="switch" id="' + id + '" name="' + f.key + '"' + (v ? ' checked' : '') + (f.readonly ? ' disabled' : '') + '>' +
-          '<label class="form-check-label" for="' + id + '">' + esc(f.label) + '</label></div>' + help + '</div>';
+          '<label class="form-check-label" for="' + id + '">' + esc(T(f.label)) + '</label></div>' + help + '</div>';
       case 'image':
         input = '<div class="d-flex align-items-center gap-3"><img class="thumb-lg" data-preview src="' + esc(v || '') + '" alt="" ' + (v ? '' : 'hidden') + '>' +
           '<div class="flex-grow-1"><input type="file" accept="' + esc(f.accept || 'image/*') + '" class="form-control" id="' + id + '" data-upload="' + f.key + '">' +
@@ -205,11 +208,11 @@
   }
 
   function itemsTable(f, rows) {
-    const head = f.fields.map((s) => '<th>' + esc(s.label) + '</th>').join('') + '<th style="width:1%"></th>';
+    const head = f.fields.map((s) => '<th>' + esc(T(s.label)) + '</th>').join('') + '<th style="width:1%"></th>';
     const body = rows.map((r) => itemRow(f, r)).join('');
     return '<div class="table-responsive border rounded"><table class="table table-sm align-middle mb-0 items-table" data-items="' + f.key + '">' +
       '<thead class="table-light"><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
-      '<button type="button" class="btn btn-sm btn-outline-primary mt-2" data-add-item="' + f.key + '"><i class="fa-solid fa-plus me-1"></i>Add row</button>';
+      '<button type="button" class="btn btn-sm btn-outline-primary mt-2" data-add-item="' + f.key + '"><i class="fa-solid fa-plus me-1"></i>' + T('Add row') + '</button>';
   }
 
   function itemRow(f, r) {
@@ -227,7 +230,7 @@
         inp = '<input type="' + t + '" step="any" class="form-control form-control-sm" data-sub="' + s.key + '" value="' + esc(v) + '">';
       }
       return '<td>' + inp + '</td>';
-    }).join('') + '<td><button type="button" class="btn btn-sm btn-link text-danger" data-del-item aria-label="Remove row"><i class="fa-solid fa-trash"></i></button></td></tr>';
+    }).join('') + '<td><button type="button" class="btn btn-sm btn-link text-danger" data-del-item aria-label="' + T('Remove row') + '"><i class="fa-solid fa-trash"></i></button></td></tr>';
   }
 
   function visible(f, values) {
@@ -244,7 +247,7 @@
     el.className = 'row g-3';
     el.noValidate = true;
     el.innerHTML = formFields.map((f) => {
-      if (f.type === 'heading') return '<div class="col-12"><h6 class="form-section">' + esc(f.label) + '</h6></div>';
+      if (f.type === 'heading') return '<div class="col-12"><h6 class="form-section">' + esc(T(f.label)) + '</h6></div>';
       return fieldHtml(f, values[f.key]);
     }).join('');
     container.innerHTML = '';
@@ -260,7 +263,7 @@
         const curArr = multi ? JSON.parse(cur || '[]').map(String) : [];
         sel.innerHTML = (multi ? '' : '<option value=""></option>') + opts.map((o) =>
           '<option value="' + esc(o.value) + '"' + ((multi ? curArr.includes(String(o.value)) : String(o.value) === cur) ? ' selected' : '') + '>' + esc(o.label) + '</option>').join('');
-      } catch (e) { sel.innerHTML = '<option value="">(could not load options)</option>'; }
+      } catch (e) { sel.innerHTML = '<option value="">' + T('(could not load options)') + '</option>'; }
     };
     const wireLookups = (scope) => {
       scope.querySelectorAll('select[data-lookup]').forEach((sel) => {
@@ -365,7 +368,7 @@
         if (!f.required || f.type === 'heading') return;
         const v = cur[f.key];
         if (v === undefined) return; // hidden
-        if (v === null || v === '' || (Array.isArray(v) && !v.length)) { errs[f.key] = ['Required']; ok = false; }
+        if (v === null || v === '' || (Array.isArray(v) && !v.length)) { errs[f.key] = [T('Required')]; ok = false; }
       });
       setErrors(errs);
       return ok;
@@ -391,8 +394,8 @@
       title,
       size: size || (fields.length > 8 || fields.some((f) => f.type === 'items') ? 'lg' : null),
       body: '',
-      footer: '<button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>' +
-        '<button class="btn btn-primary" data-submit><i class="fa-solid fa-floppy-disk me-1"></i>' + esc(submitText || 'Save') + '</button>',
+      footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Cancel') + '</button>' +
+        '<button class="btn btn-primary" data-submit><i class="fa-solid fa-floppy-disk me-1"></i>' + esc(T(submitText) || T('Save')) + '</button>',
     });
     const form = buildForm(d.body, fields, values);
     const btn = d.el.querySelector('[data-submit]');
@@ -419,21 +422,21 @@
       let val;
       if (f.type === 'items') {
         const rows = get(row, f.key) || [];
-        val = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>' + f.fields.map((s) => '<th>' + esc(s.label) + '</th>').join('') + '</tr></thead><tbody>' +
-          (rows.length ? rows.map((r) => '<tr>' + f.fields.map((s) => '<td>' + formatValue(s, r) + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + f.fields.length + '" class="text-muted">No rows</td></tr>') +
+        val = '<div class="table-responsive"><table class="table table-sm mb-0"><thead><tr>' + f.fields.map((s) => '<th>' + esc(T(s.label)) + '</th>').join('') + '</tr></thead><tbody>' +
+          (rows.length ? rows.map((r) => '<tr>' + f.fields.map((s) => '<td>' + formatValue(s, r) + '</td>').join('') + '</tr>').join('') : '<tr><td colspan="' + f.fields.length + '" class="text-muted">' + T('No rows') + '</td></tr>') +
           '</tbody></table></div>';
-        return '<dt class="col-12">' + esc(f.label) + '</dt><dd class="col-12">' + val + '</dd>';
+        return '<dt class="col-12">' + esc(T(f.label)) + '</dt><dd class="col-12">' + val + '</dd>';
       }
       val = formatValue(f, row);
-      return '<dt class="col-sm-4">' + esc(f.label) + '</dt><dd class="col-sm-8">' + val + '</dd>';
+      return '<dt class="col-sm-4">' + esc(T(f.label)) + '</dt><dd class="col-sm-8">' + val + '</dd>';
     }).join('') + '</dl>';
   }
 
   function emptyState(text, icon) {
-    return '<div class="empty-state"><i class="fa-solid ' + (icon || 'fa-inbox') + '"></i><p>' + esc(text) + '</p></div>';
+    return '<div class="empty-state"><i class="fa-solid ' + (icon || 'fa-inbox') + '"></i><p>' + esc(T(text)) + '</p></div>';
   }
 
-  function spinner() { return '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading…</span></div></div>'; }
+  function spinner() { return '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">' + T('Loading…') + '</span></div></div>'; }
 
   root.UI = {
     esc, fmt, get, isoDate, formatValue, normOptions,

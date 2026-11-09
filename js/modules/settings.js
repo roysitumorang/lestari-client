@@ -4,6 +4,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const lk = L.lookups;
   const O = L.options;
   const S = (def) => L.register(Object.assign({ kind: 'settings' }, def));
@@ -86,10 +87,10 @@
       const s = (await Api.post('/account/two-factor/setup')).data;
       const d = UI.modal({
         title: 'Two-step verification',
-        body: '<p class="small">Scan this code with Google Authenticator or a similar app, then enter the 6-digit code.</p>' +
-          '<div class="text-center mb-3 qr-box">' + (s.qr_code_svg || '') + '</div><p class="small text-center">Or enter key: <code>' + UI.esc(s.secret) + '</code></p>' +
+        body: '<p class="small">' + T('Scan this code with Google Authenticator or a similar app, then enter the 6-digit code.') + '</p>' +
+          '<div class="text-center mb-3 qr-box">' + (s.qr_code_svg || '') + '</div><p class="small text-center">' + T('Or enter key:') + ' <code>' + UI.esc(s.secret) + '</code></p>' +
           '<input class="form-control" inputmode="numeric" maxlength="6" placeholder="000000" data-code aria-label="Code">',
-        footer: '<button class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" data-ok>Enable</button>',
+        footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Cancel') + '</button><button class="btn btn-primary" data-ok>' + T('Enable') + '</button>',
       });
       d.el.querySelector('[data-ok]').addEventListener('click', async () => {
         try {
@@ -103,11 +104,11 @@
   }
 
   async function activityLog(path, title) {
-    const d = UI.modal({ title, body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">Close</button>' });
+    const d = UI.modal({ title, body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Close') + '</button>' });
     try {
       const rows = (await Api.get(path, { per_page: 100 })).data || [];
       const cols = [{ key: 'created_at', label: 'Time', format: 'datetime' }, { key: 'action', label: 'Action' }, { key: 'description', label: 'Detail' }, { key: 'ip_address', label: 'IP' }];
-      d.body.innerHTML = rows.length ? '<div class="table-responsive"><table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
+      d.body.innerHTML = rows.length ? '<div class="table-responsive"><table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + T(c.label) + '</th>').join('') + '</tr></thead><tbody>' +
         rows.map((r) => '<tr>' + cols.map((c) => '<td>' + UI.formatValue(c, r) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>' : UI.emptyState('No activity');
     } catch (e) { d.body.innerHTML = UI.emptyState(e.message, 'fa-triangle-exclamation'); }
   }
@@ -180,10 +181,10 @@
       ] },
     ],
     below: async (box) => {
-      box.innerHTML = '<div class="card"><div class="card-body"><h2 class="h6">Recent visitors</h2><div data-v>' + UI.spinner() + '</div></div></div>';
+      box.innerHTML = '<div class="card"><div class="card-body"><h2 class="h6">' + T('Recent visitors') + '</h2><div data-v>' + UI.spinner() + '</div></div></div>';
       try {
         const rows = (await Api.get('/settings/link-page/visitors', { per_page: 50 })).data || [];
-        box.querySelector('[data-v]').innerHTML = rows.length ? '<table class="table table-sm mb-0"><thead><tr><th>#</th><th>IP address</th><th>Time</th></tr></thead><tbody>' +
+        box.querySelector('[data-v]').innerHTML = rows.length ? '<table class="table table-sm mb-0"><thead><tr><th>#</th><th>' + T('IP address') + '</th><th>' + T('Time') + '</th></tr></thead><tbody>' +
           rows.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + UI.esc(r.ip_address) + '</td><td>' + UI.fmt.datetime(r.visited_at) + '</td></tr>').join('') + '</tbody></table>' : UI.emptyState('No visitors yet');
       } catch (e) { box.querySelector('[data-v]').innerHTML = UI.emptyState(e.message, 'fa-triangle-exclamation'); }
     },
@@ -258,26 +259,26 @@
     render: (container) => {
       const types = [['images', 'Product images'], ['products', 'Products'], ['sales', 'Sales & reports'], ['purchases', 'Purchases'], ['customers', 'Customers'], ['suppliers', 'Suppliers'], ['staff', 'Staff'], ['taxes', 'Taxes'], ['discounts', 'Discounts'], ['categories', 'Categories'], ['fees', 'Fee module'], ['promotions', 'Promotions'], ['shifts', 'Cashier shifts'], ['points', 'Points'], ['held_transactions', 'Held (open) bills'], ['online_orders', 'Online-store orders']];
       container.innerHTML = CrudPage.pageHeader({ title: 'Reset Data', icon: 'fa-solid fa-trash-arrow-up', description: 'Permanently delete store data. This cannot be undone.' }) +
-        '<div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Deleted data cannot be recovered. Download any reports you need first.</div>' +
+        '<div class="alert alert-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>' + T('Deleted data cannot be recovered. Download any reports you need first.') + '</div>' +
         '<div class="card"><div class="card-body" data-form></div><div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-end">' +
-        '<button class="btn btn-outline-secondary" data-otp><i class="fa-solid fa-paper-plane me-1"></i>Send code</button><button class="btn btn-danger" data-reset><i class="fa-solid fa-trash me-1"></i>Reset now</button></div></div>';
+        '<button class="btn btn-outline-secondary" data-otp><i class="fa-solid fa-paper-plane me-1"></i>' + T('Send code') + '</button><button class="btn btn-danger" data-reset><i class="fa-solid fa-trash me-1"></i>' + T('Reset now') + '</button></div></div>';
       const thisYear = new Date().getFullYear();
       const form = UI.buildForm(container.querySelector('[data-form]'), [
         { key: 'data_types', label: 'What to delete', type: 'multiselect', required: true, col: 12, options: types.map(([v, l]) => ({ value: v, label: l })) },
         { key: 'scope', label: 'Period', type: 'select', required: true, default: 'all', options: [{ value: 'all', label: 'All time' }, { value: 'year', label: 'One year' }, { value: 'month', label: 'One month' }] },
         { key: 'year', label: 'Year', type: 'select', options: [thisYear, thisYear - 1, thisYear - 2, thisYear - 3].map((y) => ({ value: y, label: String(y) })), showIf: { key: 'scope', in: ['year', 'month'] } },
-        { key: 'month', label: 'Month', type: 'select', options: Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: new Date(2000, i, 1).toLocaleString('en', { month: 'long' }) })), showIf: { key: 'scope', in: ['month'] } },
+        { key: 'month', label: 'Month', type: 'select', options: Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: new Date(2000, i, 1).toLocaleString(root.I18n && root.I18n.lang === 'id' ? 'id-ID' : 'en', { month: 'long' }) })), showIf: { key: 'scope', in: ['month'] } },
         { key: 'otp', label: 'Verification code', type: 'text', required: true, help: 'Press "Send code" to receive it.' },
       ], {});
       container.querySelector('[data-otp]').addEventListener('click', async (ev) => {
         ev.target.disabled = true;
-        try { const r = (await Api.post('/settings/reset-data/otp', { channel: 'email' })).data; UI.toast('Code sent to ' + r.sent_to); }
+        try { const r = (await Api.post('/settings/reset-data/otp', { channel: 'email' })).data; UI.toast(T('Code sent to {to}', { to: r.sent_to })); }
         catch (e) { UI.errorToast(e); } finally { setTimeout(() => { ev.target.disabled = false; }, 30000); }
       });
       container.querySelector('[data-reset]').addEventListener('click', async () => {
         if (!form.validate()) return;
         const data = form.read();
-        if (!(await UI.confirm('Delete ' + data.data_types.length + ' kind(s) of data permanently?', { title: 'Reset data', okText: 'Reset', typeToConfirm: 'RESET' }))) return;
+        if (!(await UI.confirm(T('Delete {n} kind(s) of data permanently?', { n: data.data_types.length }), { title: T('Reset data'), okText: T('Reset'), typeToConfirm: 'RESET' }))) return;
         try { await Api.post('/settings/reset-data', data); UI.toast('Reset started. You will be notified when it is done.'); } catch (e) { if (e.fields) form.setErrors(e.fields); UI.errorToast(e); }
       });
     },
@@ -301,10 +302,10 @@
             '<div class="d-flex justify-content-between align-items-start mb-2"><h2 class="h6 mb-0">' + E(p.name) + '</h2><span class="badge ' + (p.status === 'active' ? 'text-bg-success' : p.status === 'trial' ? 'text-bg-info' : 'text-bg-light border') + '">' + E(p.status) + '</span></div>' +
             '<p class="small text-muted">' + E(p.description) + '</p>' +
             '<ul class="small ps-3">' + (p.features || []).map((f) => '<li>' + E(f) + '</li>').join('') + '</ul>' +
-            '<div class="mt-auto"><div class="fw-semibold mb-2">' + UI.fmt.money(p.price_monthly) + ' <span class="small text-muted fw-normal">/ month</span></div>' +
-            (p.expires_at ? '<div class="small text-muted mb-2">Until ' + UI.fmt.date(p.expires_at) + '</div>' : '') +
+            '<div class="mt-auto"><div class="fw-semibold mb-2">' + UI.fmt.money(p.price_monthly) + ' <span class="small text-muted fw-normal">' + T('/ month') + '</span></div>' +
+            (p.expires_at ? '<div class="small text-muted mb-2">' + T('Until {date}', { date: UI.fmt.date(p.expires_at) }) + '</div>' : '') +
             '<div class="d-flex gap-2"><button class="btn btn-primary btn-sm" data-sub="' + E(p.code) + '">' + (p.status === 'active' ? 'Renew' : 'Subscribe') + '</button>' +
-            (p.trial_available ? '<button class="btn btn-outline-primary btn-sm" data-trial="' + E(p.code) + '">Try 7 days</button>' : '') + '</div></div>' +
+            (p.trial_available ? '<button class="btn btn-outline-primary btn-sm" data-trial="' + E(p.code) + '">' + T('Try 7 days') + '</button>' : '') + '</div></div>' +
             '</div></div></div>').join('') || '<div class="col-12">' + UI.emptyState('No plugins available') + '</div>';
         } catch (e) { list.innerHTML = '<div class="col-12">' + UI.emptyState(e.message, 'fa-triangle-exclamation') + '</div>'; }
       }

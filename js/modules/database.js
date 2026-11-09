@@ -4,6 +4,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const lk = L.lookups;
   const O = L.options;
 
@@ -127,11 +128,11 @@
         ],
         summary: 'Adjust stock of one product.', response: { data: '<StockLevel>' } },
       { id: 'history', label: 'Movement history', icon: 'fa-solid fa-clock-rotate-left', onClick: async (row) => {
-        const d = UI.modal({ title: 'Stock history · ' + row.name, body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">Close</button>' });
+        const d = UI.modal({ title: T('Stock history') + ' · ' + row.name, body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Close') + '</button>' });
         try {
           const r = await Api.get('/inventory/stocks/' + row.product_id + '/movements', { per_page: 100 });
-          const cols = [{ key: 'created_at', label: 'Date', format: 'datetime' }, { key: 'type', label: 'Type' }, { key: 'reference', label: 'Reference' }, { key: 'quantity_change', label: 'Change', format: 'number' }, { key: 'stock_after', label: 'Stock after', format: 'number' }, { key: 'actor_name', label: 'By' }];
-          d.body.innerHTML = (r.data || []).length ? '<div class="table-responsive"><table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
+          const cols = [{ key: 'created_at', label: 'Date', format: 'datetime' }, { key: 'type', label: 'Type' }, { key: 'reference', label: 'Reference' }, { key: 'quantity_change', label: 'Qty change', format: 'number' }, { key: 'stock_after', label: 'Stock after', format: 'number' }, { key: 'actor_name', label: 'By' }];
+          d.body.innerHTML = (r.data || []).length ? '<div class="table-responsive"><table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + T(c.label) + '</th>').join('') + '</tr></thead><tbody>' +
             r.data.map((x) => '<tr>' + cols.map((c) => '<td>' + UI.formatValue(c, x) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>' : UI.emptyState('No movements yet');
         } catch (e) { d.body.innerHTML = UI.emptyState(e.message, 'fa-triangle-exclamation'); }
       } },
@@ -191,11 +192,11 @@
         form: [{ key: 'mode', label: 'Mode', type: 'select', required: true, default: 'add', options: [{ value: 'add', label: 'Add' }, { value: 'subtract', label: 'Subtract' }] }, { key: 'points', label: 'Points', type: 'number', required: true, min: 1 }, { key: 'note', label: 'Note', type: 'textarea', col: 12 }],
         summary: 'Manually add or subtract loyalty points.', response: { data: { points: 'integer' } } },
       { id: 'point_history', label: 'Point history', icon: 'fa-solid fa-clock-rotate-left', onClick: async (row) => {
-        const d = UI.modal({ title: 'Point history · ' + row.name, body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">Close</button>' });
+        const d = UI.modal({ title: T('Point history') + ' · ' + row.name, body: UI.spinner(), size: 'lg', footer: '<button class="btn btn-light" data-bs-dismiss="modal">' + T('Close') + '</button>' });
         try {
           const r = await Api.get('/customers/' + row.id + '/point-history', { per_page: 100 });
           const cols = [{ key: 'created_at', label: 'Date', format: 'datetime' }, { key: 'type', label: 'Type' }, { key: 'points', label: 'Points', format: 'number' }, { key: 'balance_after', label: 'Balance', format: 'number' }, { key: 'reference', label: 'Reference' }, { key: 'note', label: 'Note' }];
-          d.body.innerHTML = (r.data || []).length ? '<table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' + r.data.map((x) => '<tr>' + cols.map((c) => '<td>' + UI.formatValue(c, x) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : UI.emptyState('No point history');
+          d.body.innerHTML = (r.data || []).length ? '<table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + T(c.label) + '</th>').join('') + '</tr></thead><tbody>' + r.data.map((x) => '<tr>' + cols.map((c) => '<td>' + UI.formatValue(c, x) + '</td>').join('') + '</tr>').join('') + '</tbody></table>' : UI.emptyState('No point history');
         } catch (e) { d.body.innerHTML = UI.emptyState(e.message, 'fa-triangle-exclamation'); }
       } },
     ],

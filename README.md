@@ -13,7 +13,7 @@ The API contract the backend must implement is in **[ENDPOINTS.md](ENDPOINTS.md)
    apiBaseUrl: 'https://api.example.com/api/v1',
    ```
 2. Serve the folder with any static web server, e.g. `npx serve .` or `python3 -m http.server 5500`, and open `index.html`.
-3. The backend must allow CORS from the client's origin (headers `Authorization`, `Content-Type`, `X-Branch-Id`; expose `Content-Disposition`).
+3. The backend must allow CORS from the client's origin (headers `Authorization`, `Content-Type`, `X-Branch-Id`, `Accept-Language`; expose `Content-Disposition`).
 
 ### Deploy with nginx
 
@@ -73,7 +73,8 @@ css/app.css             theme on top of Bootstrap (emerald / ivory / charcoal-da
 js/config.js            API base URL and client settings
 js/core/
   registry.js           Lestari.register(...) — every screen is declared here
-  api.js                fetch wrapper: bearer token, refresh, X-Branch-Id, error envelope, downloads
+  api.js                fetch wrapper: bearer token, refresh, X-Branch-Id, Accept-Language, error envelope, downloads
+  i18n.js               English / Bahasa Indonesia: I18n.t(), definition translation, language switch
   ui.js                 formatting, toasts, dialogs, schema-driven form builder
   charts.js             dependency-free SVG line/bar charts
 js/components/
@@ -81,11 +82,14 @@ js/components/
   report.js             date range + filters + summary cards + chart + table + export + row detail
   settings.js           GET → form → PUT pages
   actions.js            declarative row/toolbar actions (forms, confirms, uploads, downloads)
+js/i18n/id.js           Bahasa Indonesia dictionary (English text → translation)
 js/modules/*.js         the features, grouped like the sidebar
 js/menu.js              sidebar structure
 js/app.js               session, sidebar, branch switcher, notifications badge, hash router
 tools/generate-endpoints.js   builds ENDPOINTS.md from the modules (+ --check)
 tools/mock-server.js          fake API generated from the same definitions
+tools/i18n-check.js           lists English text without a Bahasa Indonesia translation (exit 1 if any)
+tools/i18n-export.js          writes the dictionary as JSON (used by lestari-mobile)
 ```
 
 Each screen is a declaration, for example:
@@ -111,6 +115,26 @@ The same declaration renders the screen **and** produces its section of ENDPOINT
    node tools/generate-endpoints.js --check
    ```
    `--check` fails if any API path called anywhere in `js/` or `index.html` is not documented, or if a screen is missing from the menu.
+3. Translate any new text: write it in English, run `node tools/i18n-check.js`, and add the missing entries to
+   `js/i18n/id.js`. Then refresh the Android copy:
+   `node tools/i18n-export.js ../lestari-mobile/app/src/main/assets/i18n/id.json`.
+
+## Languages
+
+The back office is available in **English** and **Bahasa Indonesia**.
+
+- Switch with the EN / ID buttons on the sign-in page or *Language* in the profile menu. The choice is kept in
+  `localStorage` (`lestari.lang`) and in the account's display settings (`PUT /settings/display {"language": "id"}`),
+  so the web client, the Android app and the server all follow it. Without a stored choice the browser language decides.
+- Every API request sends `Accept-Language: en|id`; the backend answers error messages, notifications and generated
+  files (receipts, invoices, exports) in that language.
+- English text is the dictionary key. Page definitions are translated once when they are registered, and the shared
+  helpers (forms, tables, toasts, dialogs) translate at render time, so declarations stay in plain English:
+  ```js
+  { key: 'rate', label: 'Rate', type: 'percent' }   // shown as "Tarif" in Bahasa Indonesia
+  UI.toast(T('{n} item(s) deleted', { n: 3 }));     // custom code: T = I18n.t, with {placeholders}
+  ```
+- Status values from the API (`pending`, `paid`, …) are shown through the dictionary too.
 
 ## Conventions
 

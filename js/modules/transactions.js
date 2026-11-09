@@ -3,6 +3,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const lk = L.lookups;
   const O = L.options;
 
@@ -114,7 +115,7 @@
       kind: 'crud', id, title, singular: title.replace(/s$/, ''), icon,
       endpoint, ops: ['list', 'read', 'export'], readOnly: true, titleKey: 'reference_number',
       tabs: { key: 'status', default: 'unpaid', options: [{ value: 'unpaid', label: 'Unpaid' }, { value: 'paid', label: 'Paid' }, { value: '', label: 'All' }] },
-      searchPlaceholder: 'Search ' + partyLabel.toLowerCase() + ' or reference',
+      searchPlaceholder: T('Search {party} or reference', { party: T(partyLabel).toLowerCase() }),
       filters: [{ key: partyKey + '_id', label: partyLabel, type: 'select', lookup: lk[partyKey + 's'] }, { key: 'overdue', label: 'Due', type: 'select', options: [{ value: 'true', label: 'Overdue only' }] }],
       columns: [
         { key: 'transaction_date', label: 'Date', format: 'date' }, { key: 'reference_number', label: 'Reference' }, { key: partyKey + '.name', label: partyLabel },

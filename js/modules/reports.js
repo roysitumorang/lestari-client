@@ -4,6 +4,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
   const lk = L.lookups;
   const O = L.options;
   const R = (def) => L.register(Object.assign({ kind: 'report' }, def));
@@ -47,7 +48,7 @@
   function receiptsTable(rows) {
     if (!rows || !rows.length) return UI.emptyState('No receipts');
     const cols = [{ key: 'created_at', label: 'Time', format: 'datetime' }, { key: 'receipt_number', label: 'Receipt' }, { key: 'cashier_name', label: 'Cashier' }, { key: 'payment_method', label: 'Method' }, { key: 'grand_total', label: 'Total', format: 'money' }];
-    return '<div class="table-responsive"><table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + c.label + '</th>').join('') + '</tr></thead><tbody>' +
+    return '<div class="table-responsive"><table class="table table-sm"><thead><tr>' + cols.map((c) => '<th>' + T(c.label) + '</th>').join('') + '</tr></thead><tbody>' +
       rows.map((r) => '<tr>' + cols.map((c) => '<td>' + UI.formatValue(c, r) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
   }
 

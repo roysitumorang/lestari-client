@@ -3,6 +3,7 @@
  */
 (function (root) {
   const L = root.Lestari;
+  const T = (s, v) => (root.I18n ? root.I18n.t(s, v) : s);
 
   L.register({
     kind: 'custom', id: 'dashboard', title: 'Dashboard', icon: 'fa-solid fa-gauge-high',
@@ -23,25 +24,25 @@
       const today = UI.isoDate(new Date());
       container.innerHTML =
         '<div class="page-head d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">' +
-        '<div><h1 class="h4 mb-1"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Dashboard</h1><p class="text-muted small mb-0">How the store is doing on the selected day.</p></div>' +
+        '<div><h1 class="h4 mb-1"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>' + T('Dashboard') + '</h1><p class="text-muted small mb-0">' + T('How the store is doing on the selected day.') + '</p></div>' +
         '<div class="d-flex flex-wrap align-items-center gap-3">' +
         '<input type="date" class="form-control w-auto" data-date value="' + today + '" aria-label="Day">' +
-        '<div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="dRev" data-rev><label class="form-check-label small" for="dRev">Include unpaid revenue</label></div>' +
-        '<div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="dProf" data-prof><label class="form-check-label small" for="dProf">Include unpaid profit</label></div>' +
+        '<div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="dRev" data-rev><label class="form-check-label small" for="dRev">' + T('Include unpaid revenue') + '</label></div>' +
+        '<div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="dProf" data-prof><label class="form-check-label small" for="dProf">' + T('Include unpaid profit') + '</label></div>' +
         '</div></div>' +
         '<div data-alerts></div>' +
         '<div class="row g-3 mb-3" data-stats></div>' +
         '<div class="row g-3">' +
-        '<div class="col-12"><div class="card"><div class="card-body"><h2 class="h6">Transactions</h2><div data-chart="transaction_count"></div></div></div></div>' +
-        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">Revenue</h2><div data-chart="revenue"></div></div></div></div>' +
-        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">Profit</h2><div data-chart="profit"></div></div></div></div>' +
-        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">Top products</h2><div data-top></div></div></div></div>' +
-        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">Low stock</h2><div data-low></div></div></div></div>' +
+        '<div class="col-12"><div class="card"><div class="card-body"><h2 class="h6">' + T('Transactions') + '</h2><div data-chart="transaction_count"></div></div></div></div>' +
+        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">' + T('Revenue') + '</h2><div data-chart="revenue"></div></div></div></div>' +
+        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">' + T('Profit') + '</h2><div data-chart="profit"></div></div></div></div>' +
+        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">' + T('Top products') + '</h2><div data-top></div></div></div></div>' +
+        '<div class="col-lg-6"><div class="card h-100"><div class="card-body"><h2 class="h6">' + T('Low stock') + '</h2><div data-low></div></div></div></div>' +
         '</div>';
 
       const stat = (label, value, icon, delta) => '<div class="col-md-4"><div class="card stat-card h-100"><div class="card-body d-flex justify-content-between">' +
         '<div><div class="stat-label">' + E(label) + '</div><div class="stat-value">' + value + '</div>' +
-        (delta != null ? '<div class="small ' + (delta >= 0 ? 'text-success' : 'text-danger') + '"><i class="fa-solid fa-arrow-' + (delta >= 0 ? 'up' : 'down') + '"></i> ' + UI.fmt.number(Math.abs(delta)) + '% vs previous day</div>' : '') +
+        (delta != null ? '<div class="small ' + (delta >= 0 ? 'text-success' : 'text-danger') + '"><i class="fa-solid fa-arrow-' + (delta >= 0 ? 'up' : 'down') + '"></i> ' + UI.fmt.number(Math.abs(delta)) + '% ' + T('vs previous day') + '</div>' : '') +
         '</div><div class="stat-icon"><i class="' + icon + '"></i></div></div></div></div>';
 
       async function load() {
@@ -52,24 +53,24 @@
           const s = d.summary || {};
           const cmp = s.compared_to_previous || {};
           container.querySelector('[data-stats]').innerHTML =
-            stat('Transactions', UI.fmt.number(s.transaction_count || 0), 'fa-solid fa-cart-shopping', cmp.transaction_count) +
-            stat('Revenue', UI.fmt.money(s.revenue || 0), 'fa-solid fa-coins', cmp.revenue) +
-            stat('Profit', UI.fmt.money(s.profit || 0), 'fa-solid fa-sack-dollar', cmp.profit);
+            stat(T('Transactions'), UI.fmt.number(s.transaction_count || 0), 'fa-solid fa-cart-shopping', cmp.transaction_count) +
+            stat(T('Revenue'), UI.fmt.money(s.revenue || 0), 'fa-solid fa-coins', cmp.revenue) +
+            stat(T('Profit'), UI.fmt.money(s.profit || 0), 'fa-solid fa-sack-dollar', cmp.profit);
           container.querySelector('[data-alerts]').innerHTML = (d.alerts || []).map((a) => '<div class="alert alert-warning d-flex justify-content-between align-items-center py-2"><span>' + E(a.message) + '</span>' +
             (a.action_route ? '<a class="btn btn-sm btn-warning" href="#/' + E(a.action_route) + '">' + E(a.action_label || 'Open') + '</a>' : '') + '</div>').join('');
           const hourly = d.hourly || [];
           ['transaction_count', 'revenue', 'profit'].forEach((k) => {
             Charts.render(container.querySelector('[data-chart="' + k + '"]'), {
               type: 'line', labels: hourly.map((h) => h.hour),
-              series: [{ name: k === 'transaction_count' ? 'Transactions' : k[0].toUpperCase() + k.slice(1), values: hourly.map((h) => Number(h[k] || 0)) }],
+              series: [{ name: T(k === 'transaction_count' ? 'Transactions' : k[0].toUpperCase() + k.slice(1)), values: hourly.map((h) => Number(h[k] || 0)) }],
               format: k === 'transaction_count' ? UI.fmt.number : UI.fmt.money,
             });
           });
           const top = d.top_products || [];
-          container.querySelector('[data-top]').innerHTML = top.length ? '<table class="table table-sm mb-0"><thead><tr><th>Product</th><th class="text-end">Qty</th><th class="text-end">Revenue</th></tr></thead><tbody>' +
+          container.querySelector('[data-top]').innerHTML = top.length ? '<table class="table table-sm mb-0"><thead><tr><th>' + T('Product') + '</th><th class="text-end">' + T('Qty') + '</th><th class="text-end">' + T('Revenue') + '</th></tr></thead><tbody>' +
             top.map((p) => '<tr><td>' + E(p.name) + '</td><td class="text-end">' + UI.fmt.number(p.quantity) + '</td><td class="text-end">' + UI.fmt.money(p.revenue) + '</td></tr>').join('') + '</tbody></table>' : UI.emptyState('No sales yet');
           const low = d.low_stock || [];
-          container.querySelector('[data-low]').innerHTML = low.length ? '<table class="table table-sm mb-0"><thead><tr><th>Product</th><th class="text-end">Stock</th><th class="text-end">Minimum</th></tr></thead><tbody>' +
+          container.querySelector('[data-low]').innerHTML = low.length ? '<table class="table table-sm mb-0"><thead><tr><th>' + T('Product') + '</th><th class="text-end">' + T('Stock') + '</th><th class="text-end">' + T('Minimum') + '</th></tr></thead><tbody>' +
             low.map((p) => '<tr><td>' + E(p.name) + '</td><td class="text-end text-danger fw-semibold">' + UI.fmt.number(p.stock) + '</td><td class="text-end">' + UI.fmt.number(p.minimum_stock) + '</td></tr>').join('') + '</tbody></table>' : UI.emptyState('All stock levels are fine', 'fa-circle-check');
         } catch (e) {
           container.querySelector('[data-stats]').innerHTML = '<div class="col-12">' + UI.emptyState(e.message, 'fa-triangle-exclamation') + '</div>';
@@ -100,9 +101,9 @@
               '<div class="d-flex justify-content-between mb-2"><h2 class="h6 mb-0">' + E(m.title) + '</h2><span class="badge text-bg-light border">' + E(m.status.replace(/_/g, ' ')) + '</span></div>' +
               '<p class="small text-muted">' + E(m.description) + '</p>' +
               '<div class="progress mb-2" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
-              '<div class="small mb-3">' + m.progress + ' / ' + m.target + ' · Reward: <strong>' + UI.fmt.number(m.reward_amount) + ' ' + E(m.reward_type.replace(/_/g, ' ')) + '</strong></div>' +
-              '<div class="mt-auto">' + (m.status === 'completed' ? '<button class="btn btn-primary btn-sm" data-claim="' + m.id + '">Claim reward</button>'
-                : (m.action_route && m.status === 'in_progress' ? '<a class="btn btn-outline-primary btn-sm" href="#/' + E(m.action_route) + '">Go</a>' : '')) + '</div>' +
+              '<div class="small mb-3">' + m.progress + ' / ' + m.target + ' · ' + T('Reward:') + ' <strong>' + UI.fmt.number(m.reward_amount) + ' ' + E(m.reward_type.replace(/_/g, ' ')) + '</strong></div>' +
+              '<div class="mt-auto">' + (m.status === 'completed' ? '<button class="btn btn-primary btn-sm" data-claim="' + m.id + '">' + T('Claim reward') + '</button>'
+                : (m.action_route && m.status === 'in_progress' ? '<a class="btn btn-outline-primary btn-sm" href="#/' + E(m.action_route) + '">' + T('Go') + '</a>' : '')) + '</div>' +
               '</div></div></div>';
           }).join('') : '<div class="col-12">' + UI.emptyState('No missions right now', 'fa-flag-checkered') + '</div>';
         } catch (e) { list.innerHTML = '<div class="col-12">' + UI.emptyState(e.message, 'fa-triangle-exclamation') + '</div>'; }
