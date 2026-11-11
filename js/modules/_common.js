@@ -34,7 +34,7 @@
   // ---- Core endpoints used outside individual pages (documented in ENDPOINTS.md) ----
   L.sharedEndpoint({
     group: 'Authentication', method: 'POST', path: '/auth/login', auth: false,
-    summary: 'Sign in as the owner or a staff member. When two-step verification is on and `otp` is missing, responds 401 with error code `two_factor_required`.',
+    summary: 'Sign in as the owner or a staff member. When two-step verification is on and `otp` is missing, responds 401 with `data.code` = `two_factor_required`.',
     body: { email: 'string', password: 'string (base64)', remember_me: 'boolean', otp: 'string? (6 digits, only when 2FA is enabled)' },
     response: { data: { access_token: 'string', refresh_token: 'string', token_type: '"Bearer"', expires_in: 'integer (seconds)', user: '<User>' } },
   });

@@ -73,7 +73,7 @@ function apiResponse(method, url) {
 http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Branch-Id');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Branch-Id, Accept-Language');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
@@ -82,8 +82,8 @@ http.createServer((req, res) => {
     const [status, body, kind] = apiResponse(req.method, url);
     if (kind === 'file') { res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment; filename="mock-export.xlsx"' }); res.end('mock'); return; }
     if (status === 204) { res.writeHead(204); res.end(); return; }
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(body));
+    res.writeHead(status, { 'Content-Type': 'application/json', 'X-Request-Id': 'mock' });
+    res.end(JSON.stringify(envelope(req, status, body)));
   });
 }).listen(API_PORT, () => console.log('Mock API      http://localhost:' + API_PORT + PREFIX));
 
@@ -96,3 +96,22 @@ http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
   fs.createReadStream(file).pipe(res);
 }).listen(STATIC_PORT, () => console.log('Static client http://localhost:' + STATIC_PORT + '/'));
+
+/** Logical body { data, meta?, summary?, … } or { error } → the envelope the real server sends. */
+function envelope(req, status, body) {
+  const out = {
+    request_id: 'mock', request_url: req.method + ' http://' + (req.headers.host || 'localhost') + req.url, status_code: status,
+    status: http.STATUS_CODES[status] || '', message: '', timestamp: new Date().toISOString(), latency: '0s', data: null, app: 'lestari-mock',
+  };
+  if (body && body.error) {
+    out.message = body.error.message || '';
+    out.data = { code: body.error.code, fields: body.error.fields };
+  } else if (body && body.meta) {
+    const m = body.meta;
+    out.data = { links: { first: '', previous: '', current: '', next: '', last: '' }, info: { limit: m.per_page, page: m.page, pages: m.total_pages, total: m.total }, rows: body.data };
+    ['summary', 'totals', 'chart'].forEach((k) => { if (body[k] !== undefined) out.data[k] = body[k]; });
+  } else if (body) {
+    out.data = body.data === undefined ? null : body.data;
+  }
+  return out;
+}

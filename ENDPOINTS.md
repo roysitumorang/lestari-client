@@ -23,27 +23,54 @@ This is the contract the HTML client expects from the Lestari backend. It covers
 
 ### Response envelope
 
-Single object:
+Every JSON response, success or error, has the same envelope:
 ```json
-{ "data": { "id": 1, "name": "…" } }
+{
+  "request_id": "6ba3451b-ac73-483e-8481-2ac53f5e75a2",
+  "request_url": "GET http://localhost:8080/api/v1/taxes/019a5f3c-8b2e-7d41-9c3a-5e8f1b2c4d6a",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "2026-11-11T14:22:47.608963985+07:00",
+  "latency": "7.746177ms",
+  "data": { "id": "019a5f3c-8b2e-7d41-9c3a-5e8f1b2c4d6a", "name": "…" },
+  "app": "lestari"
+}
+```
+`request_id` is also sent as the `X-Request-Id` header. `204 No Content` has no body. The examples below show the
+whole envelope with placeholder values for the fixed attributes.
+
+List — `data` is a page of `rows` (all list endpoints accept `page` (from 1), `per_page`, `q`, `sort`, `order`).
+`links` are ready-made URLs; `previous` / `next` are empty at the ends. Lists that are never paged return every row
+with `pages: 1`:
+```json
+"data": {
+  "links": { "first": "…/taxes?per_page=25", "previous": "", "current": "…/taxes?page=1&per_page=25", "next": "…/taxes?page=2&per_page=25", "last": "…/taxes?page=5&per_page=25" },
+  "info": { "limit": 25, "page": 1, "pages": 5, "total": 120 },
+  "rows": [ { "id": "…" } ]
+}
+```
+In the examples `"<Links>"` and `"<Info>"` stand for these two objects.
+
+Report — a list plus aggregates next to `rows`:
+```json
+"data": { "links": { … }, "info": { … }, "rows": [ … ], "summary": { … }, "totals": { … }, "chart": [ … ] }
 ```
 
-List (all list endpoints accept `page`, `per_page`, `q`, `sort`, `order`):
+Error (any 4xx/5xx) — `message` is the text to show (in the request language), `data.code` is a stable machine
+code, and `data.fields` (422) maps request attributes to messages shown next to the form inputs:
 ```json
-{ "data": [ { "id": 1 } ], "meta": { "page": 1, "per_page": 25, "total": 120, "total_pages": 5 } }
+{
+  "request_id": "…", "request_url": "POST http://localhost:8080/api/v1/taxes",
+  "status_code": 422, "status": "Unprocessable Entity",
+  "message": "Some fields are invalid.",
+  "timestamp": "…", "latency": "…",
+  "data": { "code": "validation_failed", "fields": { "name": ["Required"] } },
+  "app": "lestari"
+}
 ```
 
-Report (lists plus aggregates):
-```json
-{ "data": [ … ], "summary": { … }, "totals": { … }, "meta": { … } }
-```
-
-Error (any 4xx/5xx). `fields` maps request attributes to messages and is shown next to the form inputs:
-```json
-{ "error": { "code": "validation_failed", "message": "Some fields are invalid.", "fields": { "name": ["Required"] } } }
-```
-
-| Status | When | `error.code` examples |
+| Status | When | `data.code` examples |
 |---|---|---|
 | 400 | malformed request | `bad_request` |
 | 401 | missing/expired token, wrong credentials | `unauthenticated`, `invalid_credentials`, `two_factor_required` |
@@ -175,7 +202,7 @@ Error (any 4xx/5xx). `fields` maps request attributes to messages and is shown n
 
 #### `POST /auth/login`
 
-Sign in as the owner or a staff member. When two-step verification is on and `otp` is missing, responds 401 with error code `two_factor_required`. *(no token required)*
+Sign in as the owner or a staff member. When two-step verification is on and `otp` is missing, responds 401 with `data.code` = `two_factor_required`. *(no token required)*
 
 **Request body** (application/json)
 
@@ -192,13 +219,21 @@ Sign in as the owner or a staff member. When two-step verification is on and `ot
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "access_token": "string",
     "refresh_token": "string",
     "token_type": "\"Bearer\"",
     "expires_in": "integer (seconds)",
     "user": "<User>"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -218,11 +253,19 @@ Exchange a refresh token for a new access token. *(no token required)*
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "access_token": "string",
     "refresh_token": "string",
     "expires_in": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -242,6 +285,13 @@ Current user, store and active branch; also drives menu permissions.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -266,7 +316,8 @@ Current user, store and active branch; also drives menu permissions.
     "active_plugins": [
       "string"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -288,9 +339,17 @@ Change the signed-in user's password.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "changed": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -313,12 +372,20 @@ Upload an image or document; returns a URL to store in image fields.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string",
     "url": "string",
     "mime_type": "string",
     "size": "integer (bytes)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -332,9 +399,17 @@ Badge count shown in the top bar.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "count": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -353,6 +428,13 @@ Gamified tasks with progress and rewards.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "id": "string (mission code)",
@@ -367,7 +449,8 @@ Gamified tasks with progress and rewards.
       "expires_at": "datetime|null",
       "action_route": "string|null"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -381,12 +464,20 @@ Claim the reward of a completed mission.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (mission code)",
     "status": "\"claimed\"",
     "reward_type": "string",
     "reward_amount": "number"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -416,23 +507,34 @@ Your plan, premium coin balance and invoices.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "invoice_number": "string",
-      "description": "string",
-      "payment_method": "string",
-      "amount": "number (currency)",
-      "status": "string"
-    }
-  ],
-  "summary": {
-    "plan_name": "string",
-    "plan_expires_at": "date",
-    "coin_balance": "number (currency)"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "invoice_number": "string",
+        "description": "string",
+        "payment_method": "string",
+        "amount": "number (currency)",
+        "status": "string"
+      }
+    ],
+    "summary": {
+      "plan_name": "string",
+      "plan_expires_at": "date",
+      "coin_balance": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -456,7 +558,15 @@ Buy or renew the store subscription.
 
 ```json
 {
-  "data": "<Invoice>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Invoice>",
+  "app": "lestari"
 }
 ```
 
@@ -478,7 +588,15 @@ Buy premium coins.
 
 ```json
 {
-  "data": "<Invoice>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Invoice>",
+  "app": "lestari"
 }
 ```
 
@@ -498,12 +616,20 @@ Redeem voucher
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "code": "string",
     "reward_type": "\"coin\" | \"subscription_days\" | \"plugin\"",
     "reward_amount": "number",
     "coin_balance": "number"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -526,7 +652,15 @@ Upload transfer proof
 
 ```json
 {
-  "data": "<Invoice>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Invoice>",
+  "app": "lestari"
 }
 ```
 
@@ -540,7 +674,15 @@ Cancel
 
 ```json
 {
-  "data": "<Invoice>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Invoice>",
+  "app": "lestari"
 }
 ```
 
@@ -577,6 +719,13 @@ Today-at-a-glance numbers and hourly charts.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "date": "date",
     "summary": {
@@ -622,7 +771,8 @@ Today-at-a-glance numbers and hourly charts.
         "action_route": "string|null"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -655,82 +805,93 @@ List products & services.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "image_url": "string (URL from POST /uploads) | null",
-      "name": "string",
-      "item_type": "\"product\" | \"service\"",
-      "sku": "string",
-      "barcode": "string",
-      "category_id": "string (uuid, categories id) | null",
-      "category": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "name": "string"
-      },
-      "unit": "string",
-      "selling_price": "number (currency)",
-      "purchase_price": "number (currency)",
-      "price_type": "\"single\" | \"wholesale\" | \"customer_type\"",
-      "tax_id": "string (uuid, taxes id) | null",
-      "tax": {
-        "id": "string (uuid)",
-        "name": "string"
-      },
-      "discount_type": "\"percent\" | \"amount\"",
-      "discount_value": "number",
-      "wholesale_prices": [
-        {
-          "min_quantity": "number",
-          "price": "number (currency)"
-        }
-      ],
-      "customer_type_prices": [
-        {
-          "customer_type_id": "string (uuid, customer-types id) | null",
-          "price": "number (currency)"
-        }
-      ],
-      "track_stock": "boolean",
-      "stock": "number",
-      "minimum_stock": "number",
-      "shelf_location": "string",
-      "weight_grams": "number",
-      "track_imei": "boolean",
-      "units": [
-        {
-          "name": "string",
-          "conversion": "number",
-          "selling_price": "number (currency)",
-          "barcode": "string"
-        }
-      ],
-      "variants": [
-        {
-          "name": "string",
-          "sku": "string",
-          "selling_price": "number (currency)",
-          "purchase_price": "number (currency)",
-          "stock": "number"
-        }
-      ],
-      "ingredients": [
-        {
-          "product_id": "string (uuid, products id) | null",
-          "quantity": "number",
-          "unit": "\"kg\" | \"ons\" | \"g\" | \"l\" | \"ml\" | \"pcs\""
-        }
-      ],
-      "points_earned": "number",
-      "points_to_redeem": "number",
-      "show_in_online_store": "boolean",
-      "description": "string",
-      "online_description": "string",
-      "updated_at": "datetime",
-      "created_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "image_url": "string (URL from POST /uploads) | null",
+        "name": "string",
+        "item_type": "\"product\" | \"service\"",
+        "sku": "string",
+        "barcode": "string",
+        "category_id": "string (uuid, categories id) | null",
+        "category": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "unit": "string",
+        "selling_price": "number (currency)",
+        "purchase_price": "number (currency)",
+        "price_type": "\"single\" | \"wholesale\" | \"customer_type\"",
+        "tax_id": "string (uuid, taxes id) | null",
+        "tax": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "discount_type": "\"percent\" | \"amount\"",
+        "discount_value": "number",
+        "wholesale_prices": [
+          {
+            "min_quantity": "number",
+            "price": "number (currency)"
+          }
+        ],
+        "customer_type_prices": [
+          {
+            "customer_type_id": "string (uuid, customer-types id) | null",
+            "price": "number (currency)"
+          }
+        ],
+        "track_stock": "boolean",
+        "stock": "number",
+        "minimum_stock": "number",
+        "shelf_location": "string",
+        "weight_grams": "number",
+        "track_imei": "boolean",
+        "units": [
+          {
+            "name": "string",
+            "conversion": "number",
+            "selling_price": "number (currency)",
+            "barcode": "string"
+          }
+        ],
+        "variants": [
+          {
+            "name": "string",
+            "sku": "string",
+            "selling_price": "number (currency)",
+            "purchase_price": "number (currency)",
+            "stock": "number"
+          }
+        ],
+        "ingredients": [
+          {
+            "product_id": "string (uuid, products id) | null",
+            "quantity": "number",
+            "unit": "\"kg\" | \"ons\" | \"g\" | \"l\" | \"ml\" | \"pcs\""
+          }
+        ],
+        "points_earned": "number",
+        "points_to_redeem": "number",
+        "show_in_online_store": "boolean",
+        "description": "string",
+        "online_description": "string",
+        "updated_at": "datetime",
+        "created_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -809,6 +970,13 @@ Create a product.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "image_url": "string (URL from POST /uploads) | null",
@@ -881,7 +1049,8 @@ Create a product.
     "online_description": "string",
     "updated_at": "datetime",
     "created_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -895,6 +1064,13 @@ Get one product.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "image_url": "string (URL from POST /uploads) | null",
@@ -967,7 +1143,8 @@ Get one product.
     "online_description": "string",
     "updated_at": "datetime",
     "created_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1048,6 +1225,13 @@ Update a product. Only attributes present in the body are written; send null to 
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "image_url": "string (URL from POST /uploads) | null",
@@ -1120,7 +1304,8 @@ Update a product. Only attributes present in the body are written; send null to 
     "online_description": "string",
     "updated_at": "datetime",
     "created_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1152,9 +1337,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1175,6 +1368,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -1185,7 +1385,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1259,7 +1460,15 @@ Copy a product (new SKU is generated).
 
 ```json
 {
-  "data": "<Product>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Product>",
+  "app": "lestari"
 }
 ```
 
@@ -1277,9 +1486,17 @@ Suggest the next free SKU.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sku": "string"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1298,9 +1515,17 @@ Check whether a SKU is already used.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "available": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1329,22 +1554,33 @@ List stock management.
 
 ```json
 {
-  "data": [
-    {
-      "product_id": "string",
-      "name": "string",
-      "sku": "string",
-      "stock": "number",
-      "unit": "string",
-      "minimum_stock": "number",
-      "stock_value": "number (currency)",
-      "updated_at": "datetime",
-      "image_url": "string (URL)",
-      "category_name": "string",
-      "created_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "product_id": "string",
+        "name": "string",
+        "sku": "string",
+        "stock": "number",
+        "unit": "string",
+        "minimum_stock": "number",
+        "stock_value": "number (currency)",
+        "updated_at": "datetime",
+        "image_url": "string (URL)",
+        "category_name": "string",
+        "created_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1364,6 +1600,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -1374,7 +1617,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1413,10 +1657,18 @@ Rebuild stock from history ("Fix stock data"). Runs as a background job.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "job_id": "string (uuid)",
     "status": "\"queued\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1442,7 +1694,15 @@ Adjust stock of one product.
 
 ```json
 {
-  "data": "<StockLevel>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<StockLevel>",
+  "app": "lestari"
 }
 ```
 
@@ -1465,18 +1725,29 @@ Stock movement log for one product.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "created_at": "datetime",
-      "type": "\"sale\" | \"purchase\" | \"adjustment\" | \"opname\" | \"transfer_in\" | \"transfer_out\" | \"return\"",
-      "reference": "string",
-      "quantity_change": "number",
-      "stock_after": "number",
-      "actor_name": "string"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "created_at": "datetime",
+        "type": "\"sale\" | \"purchase\" | \"adjustment\" | \"opname\" | \"transfer_in\" | \"transfer_out\" | \"return\"",
+        "reference": "string",
+        "quantity_change": "number",
+        "stock_after": "number",
+        "actor_name": "string"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1502,19 +1773,30 @@ List categories.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "color": "string (#rrggbb)",
-      "sort_order": "number",
-      "product_count": "number",
-      "description": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "color": "string (#rrggbb)",
+        "sort_order": "number",
+        "product_count": "number",
+        "description": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1537,6 +1819,13 @@ Create a category.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -1546,7 +1835,8 @@ Create a category.
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1560,6 +1850,13 @@ Get one category.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -1569,7 +1866,8 @@ Get one category.
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1594,6 +1892,13 @@ Update a category. Only attributes present in the body are written; send null to
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -1603,7 +1908,8 @@ Update a category. Only attributes present in the body are written; send null to
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1635,9 +1941,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1664,28 +1978,39 @@ List customers.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "phone": "string",
-      "email": "string (email)",
-      "code": "string",
-      "customer_type_id": "string (uuid, customer-types id) | null",
-      "customer_type": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "name": "string"
-      },
-      "birth_date": "date (YYYY-MM-DD)",
-      "points": "number",
-      "receivable_balance": "number (currency)",
-      "address": "string",
-      "note": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "name": "string",
+        "phone": "string",
+        "email": "string (email)",
+        "code": "string",
+        "customer_type_id": "string (uuid, customer-types id) | null",
+        "customer_type": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "birth_date": "date (YYYY-MM-DD)",
+        "points": "number",
+        "receivable_balance": "number (currency)",
+        "address": "string",
+        "note": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1712,6 +2037,13 @@ Create a customer.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -1730,7 +2062,8 @@ Create a customer.
     "note": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1744,6 +2077,13 @@ Get one customer.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -1762,7 +2102,8 @@ Get one customer.
     "note": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1791,6 +2132,13 @@ Update a customer. Only attributes present in the body are written; send null to
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -1809,7 +2157,8 @@ Update a customer. Only attributes present in the body are written; send null to
     "note": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1841,9 +2190,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1863,6 +2220,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -1873,7 +2237,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1935,6 +2300,13 @@ Bulk set/add points from a spreadsheet (columns: code, points).
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "updated": "integer",
     "failed": "integer",
@@ -1944,7 +2316,8 @@ Bulk set/add points from a spreadsheet (columns: code, points).
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1968,9 +2341,17 @@ Manually add or subtract loyalty points.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "points": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -1991,18 +2372,29 @@ Point ledger for one customer.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "created_at": "datetime",
-      "type": "\"earned\" | \"redeemed\" | \"adjusted\" | \"expired\"",
-      "points": "integer",
-      "balance_after": "integer",
-      "reference": "string|null",
-      "note": "string|null"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "created_at": "datetime",
+        "type": "\"earned\" | \"redeemed\" | \"adjusted\" | \"expired\"",
+        "points": "integer",
+        "balance_after": "integer",
+        "reference": "string|null",
+        "note": "string|null"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2029,20 +2421,31 @@ List customer types.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "discount_type": "\"percent\" | \"amount\"",
-      "discount_value": "number",
-      "point_multiplier": "number",
-      "customer_count": "number",
-      "description": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "discount_type": "\"percent\" | \"amount\"",
+        "discount_value": "number",
+        "point_multiplier": "number",
+        "customer_count": "number",
+        "description": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2066,6 +2469,13 @@ Create a customer type.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2076,7 +2486,8 @@ Create a customer type.
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2090,6 +2501,13 @@ Get one customer type.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2100,7 +2518,8 @@ Get one customer type.
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2126,6 +2545,13 @@ Update a customer type. Only attributes present in the body are written; send nu
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2136,7 +2562,8 @@ Update a customer type. Only attributes present in the body are written; send nu
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2172,21 +2599,32 @@ List suppliers.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "contact_person": "string",
-      "phone": "string",
-      "email": "string (email)",
-      "code": "string",
-      "payable_balance": "number (currency)",
-      "address": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "contact_person": "string",
+        "phone": "string",
+        "email": "string (email)",
+        "code": "string",
+        "payable_balance": "number (currency)",
+        "address": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2211,6 +2649,13 @@ Create a supplier.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2222,7 +2667,8 @@ Create a supplier.
     "address": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2236,6 +2682,13 @@ Get one supplier.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2247,7 +2700,8 @@ Get one supplier.
     "address": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2274,6 +2728,13 @@ Update a supplier. Only attributes present in the body are written; send null to
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2285,7 +2746,8 @@ Update a supplier. Only attributes present in the body are written; send null to
     "address": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2317,9 +2779,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2339,6 +2809,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -2349,7 +2826,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2400,18 +2878,29 @@ List discounts.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "type": "\"percent\" | \"amount\"",
-      "value": "number",
-      "is_active": "boolean",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "type": "\"percent\" | \"amount\"",
+        "value": "number",
+        "is_active": "boolean",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2434,6 +2923,13 @@ Create a discount.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2442,7 +2938,8 @@ Create a discount.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2456,6 +2953,13 @@ Get one discount.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2464,7 +2968,8 @@ Get one discount.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2489,6 +2994,13 @@ Update a discount. Only attributes present in the body are written; send null to
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2497,7 +3009,8 @@ Update a discount. Only attributes present in the body are written; send null to
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2529,9 +3042,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2557,18 +3078,29 @@ List taxes.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "rate": "number (0–100)",
-      "is_inclusive": "boolean",
-      "is_active": "boolean",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "rate": "number (0–100)",
+        "is_inclusive": "boolean",
+        "is_active": "boolean",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2591,6 +3123,13 @@ Create a tax.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2599,7 +3138,8 @@ Create a tax.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2613,6 +3153,13 @@ Get one tax.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2621,7 +3168,8 @@ Get one tax.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2646,6 +3194,13 @@ Update a tax. Only attributes present in the body are written; send null to clea
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2654,7 +3209,8 @@ Update a tax. Only attributes present in the body are written; send null to clea
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2686,9 +3242,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2715,18 +3279,29 @@ List fee module.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "amount_type": "\"percent\" | \"amount\"",
-      "amount": "number",
-      "applies_to": "\"sale\" | \"purchase\" | \"both\"",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "amount_type": "\"percent\" | \"amount\"",
+        "amount": "number",
+        "applies_to": "\"sale\" | \"purchase\" | \"both\"",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2749,6 +3324,13 @@ Create a fee.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2757,7 +3339,8 @@ Create a fee.
     "applies_to": "\"sale\" | \"purchase\" | \"both\"",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2771,6 +3354,13 @@ Get one fee.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2779,7 +3369,8 @@ Get one fee.
     "applies_to": "\"sale\" | \"purchase\" | \"both\"",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2804,6 +3395,13 @@ Update a fee. Only attributes present in the body are written; send null to clea
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2812,7 +3410,8 @@ Update a fee. Only attributes present in the body are written; send null to clea
     "applies_to": "\"sale\" | \"purchase\" | \"both\"",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2848,17 +3447,28 @@ List cash drawers.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "is_active": "boolean",
-      "current_shift_status": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "is_active": "boolean",
+        "current_shift_status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2879,6 +3489,13 @@ Create a cash drawer.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2886,7 +3503,8 @@ Create a cash drawer.
     "current_shift_status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2900,6 +3518,13 @@ Get one cash drawer.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2907,7 +3532,8 @@ Get one cash drawer.
     "current_shift_status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2930,6 +3556,13 @@ Update a cash drawer. Only attributes present in the body are written; send null
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -2937,7 +3570,8 @@ Update a cash drawer. Only attributes present in the body are written; send null
     "current_shift_status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -2975,39 +3609,50 @@ List promotions.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "type": "\"product_discount\" | \"buy_x_get_y\" | \"minimum_purchase\"",
-      "start_date": "date (YYYY-MM-DD)",
-      "end_date": "date (YYYY-MM-DD)",
-      "start_time": "string (HH:mm)",
-      "end_time": "string (HH:mm)",
-      "days": [
-        "\"monday\" | \"tuesday\" | \"wednesday\" | \"thursday\" | \"friday\" | \"saturday\" | \"sunday\""
-      ],
-      "customer_type_ids": [
-        "string (uuid, customer-types id)"
-      ],
-      "discount_type": "\"percent\" | \"amount\"",
-      "discount_value": "number",
-      "minimum_purchase": "number (currency)",
-      "buy_quantity": "number",
-      "get_quantity": "number",
-      "products": [
-        {
-          "product_id": "string (uuid, products id) | null",
-          "free_product_id": "string (uuid, products id) | null"
-        }
-      ],
-      "is_active": "boolean",
-      "description": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "type": "\"product_discount\" | \"buy_x_get_y\" | \"minimum_purchase\"",
+        "start_date": "date (YYYY-MM-DD)",
+        "end_date": "date (YYYY-MM-DD)",
+        "start_time": "string (HH:mm)",
+        "end_time": "string (HH:mm)",
+        "days": [
+          "\"monday\" | \"tuesday\" | \"wednesday\" | \"thursday\" | \"friday\" | \"saturday\" | \"sunday\""
+        ],
+        "customer_type_ids": [
+          "string (uuid, customer-types id)"
+        ],
+        "discount_type": "\"percent\" | \"amount\"",
+        "discount_value": "number",
+        "minimum_purchase": "number (currency)",
+        "buy_quantity": "number",
+        "get_quantity": "number",
+        "products": [
+          {
+            "product_id": "string (uuid, products id) | null",
+            "free_product_id": "string (uuid, products id) | null"
+          }
+        ],
+        "is_active": "boolean",
+        "description": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3051,6 +3696,13 @@ Create a promotion.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -3080,7 +3732,8 @@ Create a promotion.
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3094,6 +3747,13 @@ Get one promotion.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -3123,7 +3783,8 @@ Get one promotion.
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3169,6 +3830,13 @@ Update a promotion. Only attributes present in the body are written; send null t
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -3198,7 +3866,8 @@ Update a promotion. Only attributes present in the body are written; send null t
     "description": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3225,6 +3894,13 @@ Read loyalty points settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "earn_spend_amount": "number (currency)",
@@ -3233,7 +3909,8 @@ Read loyalty points settings.
     "minimum_redeem_points": "number",
     "expiry_days": "number",
     "earn_on_credit_sales": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3259,6 +3936,13 @@ Save loyalty points settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "earn_spend_amount": "number (currency)",
@@ -3267,7 +3951,8 @@ Save loyalty points settings.
     "minimum_redeem_points": "number",
     "expiry_days": "number",
     "earn_on_credit_sales": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3293,25 +3978,36 @@ List staff commissions.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "basis": "\"product\" | \"transaction\"",
-      "type": "\"percent\" | \"amount\"",
-      "value": "number",
-      "staff_ids": [
-        "string (uuid, staff id)"
-      ],
-      "product_ids": [
-        "string (uuid, products id)"
-      ],
-      "is_active": "boolean",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "basis": "\"product\" | \"transaction\"",
+        "type": "\"percent\" | \"amount\"",
+        "value": "number",
+        "staff_ids": [
+          "string (uuid, staff id)"
+        ],
+        "product_ids": [
+          "string (uuid, products id)"
+        ],
+        "is_active": "boolean",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3341,6 +4037,13 @@ Create a commission rule.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -3356,7 +4059,8 @@ Create a commission rule.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3370,6 +4074,13 @@ Get one commission rule.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -3385,7 +4096,8 @@ Get one commission rule.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3417,6 +4129,13 @@ Update a commission rule. Only attributes present in the body are written; send 
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -3432,7 +4151,8 @@ Update a commission rule. Only attributes present in the body are written; send 
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3469,29 +4189,40 @@ List stock opname.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "opname_date": "date (YYYY-MM-DD)",
-      "performed_by_name": "string",
-      "performed_by_role": "\"owner\" | \"administrator\" | \"manager\" | \"cashier\"",
-      "items": [
-        {
-          "product_id": "string (uuid, products id) | null",
-          "physical_stock": "number",
-          "note": "string"
-        }
-      ],
-      "note": "string",
-      "code": "string",
-      "item_count": "number",
-      "difference_value": "number (currency)",
-      "status": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "opname_date": "date (YYYY-MM-DD)",
+        "performed_by_name": "string",
+        "performed_by_role": "\"owner\" | \"administrator\" | \"manager\" | \"cashier\"",
+        "items": [
+          {
+            "product_id": "string (uuid, products id) | null",
+            "physical_stock": "number",
+            "note": "string"
+          }
+        ],
+        "note": "string",
+        "code": "string",
+        "item_count": "number",
+        "difference_value": "number (currency)",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3521,6 +4252,13 @@ Create a stock opname.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "opname_date": "date (YYYY-MM-DD)",
@@ -3540,7 +4278,8 @@ Create a stock opname.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3554,6 +4293,13 @@ Get one stock opname.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "opname_date": "date (YYYY-MM-DD)",
@@ -3573,7 +4319,8 @@ Get one stock opname.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3605,9 +4352,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3627,6 +4382,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -3637,7 +4399,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3659,7 +4422,15 @@ Approve & apply
 
 ```json
 {
-  "data": "<StockOpname>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<StockOpname>",
+  "app": "lestari"
 }
 ```
 
@@ -3681,7 +4452,15 @@ Reject
 
 ```json
 {
-  "data": "<StockOpname>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<StockOpname>",
+  "app": "lestari"
 }
 ```
 
@@ -3726,44 +4505,55 @@ List sales.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "receipt_number": "string",
-      "created_at": "datetime",
-      "cashier_name": "string",
-      "customer": {
-        "name": "string"
-      },
-      "payment_method": "string",
-      "payment_type": "\"cash\" | \"credit\"",
-      "items": [
-        {
-          "product_name": "string",
-          "variant_name": "string",
-          "quantity": "number",
-          "unit_price": "number (currency)",
-          "discount_amount": "number (currency)",
-          "subtotal": "number (currency)"
-        }
-      ],
-      "subtotal": "number (currency)",
-      "discount_total": "number (currency)",
-      "tax_total": "number (currency)",
-      "service_charge": "number (currency)",
-      "fee_total": "number (currency)",
-      "rounding": "number (currency)",
-      "grand_total": "number (currency)",
-      "paid_amount": "number (currency)",
-      "change_amount": "number (currency)",
-      "profit": "number (currency)",
-      "label": "string",
-      "note": "string",
-      "status": "string",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "receipt_number": "string",
+        "created_at": "datetime",
+        "cashier_name": "string",
+        "customer": {
+          "name": "string"
+        },
+        "payment_method": "string",
+        "payment_type": "\"cash\" | \"credit\"",
+        "items": [
+          {
+            "product_name": "string",
+            "variant_name": "string",
+            "quantity": "number",
+            "unit_price": "number (currency)",
+            "discount_amount": "number (currency)",
+            "subtotal": "number (currency)"
+          }
+        ],
+        "subtotal": "number (currency)",
+        "discount_total": "number (currency)",
+        "tax_total": "number (currency)",
+        "service_charge": "number (currency)",
+        "fee_total": "number (currency)",
+        "rounding": "number (currency)",
+        "grand_total": "number (currency)",
+        "paid_amount": "number (currency)",
+        "change_amount": "number (currency)",
+        "profit": "number (currency)",
+        "label": "string",
+        "note": "string",
+        "status": "string",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3777,6 +4567,13 @@ Get one sale.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "receipt_number": "string",
@@ -3811,7 +4608,8 @@ Get one sale.
     "note": "string",
     "status": "string",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3894,41 +4692,52 @@ List purchases.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "supplier_id": "string (uuid, suppliers id) | null",
-      "supplier": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "name": "string"
-      },
-      "purchase_date": "date (YYYY-MM-DD)",
-      "invoice_number": "string",
-      "payment_type": "\"cash\" | \"credit\"",
-      "payment_method": "\"cash\" | \"debit\" | \"credit_card\" | \"qris\" | \"e_wallet\" | \"bank_transfer\" | \"other\"",
-      "due_date": "date (YYYY-MM-DD)",
-      "paid_amount": "number (currency)",
-      "items": [
-        {
-          "product_id": "string (uuid, products id) | null",
-          "quantity": "number",
-          "unit": "string",
-          "unit_cost": "number (currency)",
-          "discount_amount": "number (currency)"
-        }
-      ],
-      "discount_total": "number (currency)",
-      "tax_total": "number (currency)",
-      "fee_total": "number (currency)",
-      "grand_total": "number (currency)",
-      "note": "string",
-      "receipt_number": "string",
-      "status": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "supplier_id": "string (uuid, suppliers id) | null",
+        "supplier": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "purchase_date": "date (YYYY-MM-DD)",
+        "invoice_number": "string",
+        "payment_type": "\"cash\" | \"credit\"",
+        "payment_method": "\"cash\" | \"debit\" | \"credit_card\" | \"qris\" | \"e_wallet\" | \"bank_transfer\" | \"other\"",
+        "due_date": "date (YYYY-MM-DD)",
+        "paid_amount": "number (currency)",
+        "items": [
+          {
+            "product_id": "string (uuid, products id) | null",
+            "quantity": "number",
+            "unit": "string",
+            "unit_cost": "number (currency)",
+            "discount_amount": "number (currency)"
+          }
+        ],
+        "discount_total": "number (currency)",
+        "tax_total": "number (currency)",
+        "fee_total": "number (currency)",
+        "grand_total": "number (currency)",
+        "note": "string",
+        "receipt_number": "string",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -3967,6 +4776,13 @@ Create a purchase.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "supplier_id": "string (uuid, suppliers id) | null",
@@ -3998,7 +4814,8 @@ Create a purchase.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4012,6 +4829,13 @@ Get one purchase.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "supplier_id": "string (uuid, suppliers id) | null",
@@ -4043,7 +4867,8 @@ Get one purchase.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4084,6 +4909,13 @@ Update a purchase. Only attributes present in the body are written; send null to
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "supplier_id": "string (uuid, suppliers id) | null",
@@ -4115,7 +4947,8 @@ Update a purchase. Only attributes present in the body are written; send null to
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4175,7 +5008,15 @@ Return items to the supplier; creates a purchase return.
 
 ```json
 {
-  "data": "<PurchaseReturn>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<PurchaseReturn>",
+  "app": "lestari"
 }
 ```
 
@@ -4205,26 +5046,37 @@ List cash in & out.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "entry_date": "date (YYYY-MM-DD)",
-      "type": "\"income\" | \"expense\"",
-      "category": "string",
-      "amount": "number (currency)",
-      "payment_method": "\"cash\" | \"debit\" | \"credit_card\" | \"qris\" | \"e_wallet\" | \"bank_transfer\" | \"other\"",
-      "cash_drawer_id": "string (uuid, cash-drawers id) | null",
-      "cash_drawer": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "name": "string"
-      },
-      "description": "string",
-      "attachment_url": "string (URL from POST /uploads) | null",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "entry_date": "date (YYYY-MM-DD)",
+        "type": "\"income\" | \"expense\"",
+        "category": "string",
+        "amount": "number (currency)",
+        "payment_method": "\"cash\" | \"debit\" | \"credit_card\" | \"qris\" | \"e_wallet\" | \"bank_transfer\" | \"other\"",
+        "cash_drawer_id": "string (uuid, cash-drawers id) | null",
+        "cash_drawer": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "description": "string",
+        "attachment_url": "string (URL from POST /uploads) | null",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4251,6 +5103,13 @@ Create a entry.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "entry_date": "date (YYYY-MM-DD)",
@@ -4267,7 +5126,8 @@ Create a entry.
     "attachment_url": "string (URL from POST /uploads) | null",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4281,6 +5141,13 @@ Get one entry.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "entry_date": "date (YYYY-MM-DD)",
@@ -4297,7 +5164,8 @@ Get one entry.
     "attachment_url": "string (URL from POST /uploads) | null",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4326,6 +5194,13 @@ Update a entry. Only attributes present in the body are written; send null to cl
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "entry_date": "date (YYYY-MM-DD)",
@@ -4342,7 +5217,8 @@ Update a entry. Only attributes present in the body are written; send null to cl
     "attachment_url": "string (URL from POST /uploads) | null",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4399,27 +5275,39 @@ Profit & Loss report.
 
 ```json
 {
-  "data": [
-    {
-      "date": "date",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "date": "date",
+        "gross_sales": "number (currency)",
+        "discounts": "number (currency)",
+        "cost_of_goods_sold": "number (currency)",
+        "gross_profit": "number (currency)",
+        "other_income": "number (currency)",
+        "mdr_fees": "number (currency)",
+        "commissions": "number (currency)",
+        "other_expenses": "number (currency)",
+        "net_profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "gross_sales": "number (currency)",
-      "discounts": "number (currency)",
       "cost_of_goods_sold": "number (currency)",
-      "gross_profit": "number (currency)",
       "other_income": "number (currency)",
-      "mdr_fees": "number (currency)",
-      "commissions": "number (currency)",
-      "other_expenses": "number (currency)",
       "net_profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "gross_sales": "number (currency)",
-    "cost_of_goods_sold": "number (currency)",
-    "other_income": "number (currency)",
-    "net_profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  "app": "lestari"
 }
 ```
 
@@ -4464,23 +5352,34 @@ Cash Flow report.
 
 ```json
 {
-  "data": [
-    {
-      "date": "datetime",
-      "type": "string",
-      "source": "string",
-      "category": "string",
-      "description": "string",
-      "amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "total_income": "number (currency)",
-    "total_expense": "number (currency)",
-    "net_cash_flow": "number (currency)"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "date": "datetime",
+        "type": "string",
+        "source": "string",
+        "category": "string",
+        "description": "string",
+        "amount": "number (currency)"
+      }
+    ],
+    "summary": {
+      "total_income": "number (currency)",
+      "total_expense": "number (currency)",
+      "net_cash_flow": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -4521,23 +5420,35 @@ One row per day. Open a day to see its receipts.
 
 ```json
 {
-  "data": [
-    {
-      "date": "date",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "date": "date",
+        "transaction_count": "number",
+        "gross_sales": "number (currency)",
+        "discounts": "number (currency)",
+        "taxes": "number (currency)",
+        "net_sales": "number (currency)",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "transaction_count": "number",
-      "gross_sales": "number (currency)",
-      "discounts": "number (currency)",
-      "taxes": "number (currency)",
       "net_sales": "number (currency)",
       "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "transaction_count": "number",
-    "net_sales": "number (currency)",
-    "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  "app": "lestari"
 }
 ```
 
@@ -4567,6 +5478,13 @@ Receipts of the day
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -4578,7 +5496,8 @@ Receipts of the day
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4599,9 +5518,17 @@ Recalculate cached daily totals ("Sinkronisasi").
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "job_id": "string (uuid)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4632,29 +5559,40 @@ Sales Transactions report.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "receipt_number": "string",
-      "cashier_name": "string",
-      "payment_method": "string",
-      "payment_type": "string",
-      "profit": "number (currency)",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "receipt_number": "string",
+        "cashier_name": "string",
+        "payment_method": "string",
+        "payment_type": "string",
+        "profit": "number (currency)",
+        "grand_total": "number (currency)",
+        "paid_amount": "number (currency)",
+        "service_charge": "number (currency)",
+        "rounding": "number (currency)",
+        "label": "string",
+        "customer_type": "string"
+      }
+    ],
+    "summary": {
+      "transaction_count": "number",
       "grand_total": "number (currency)",
-      "paid_amount": "number (currency)",
-      "service_charge": "number (currency)",
-      "rounding": "number (currency)",
-      "label": "string",
-      "customer_type": "string"
-    }
-  ],
-  "summary": {
-    "transaction_count": "number",
-    "grand_total": "number (currency)",
-    "profit": "number (currency)"
+      "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -4701,26 +5639,37 @@ Sales by Product report.
 
 ```json
 {
-  "data": [
-    {
-      "product_name": "string",
-      "sku": "string",
-      "category_name": "string",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "product_name": "string",
+        "sku": "string",
+        "category_name": "string",
+        "quantity_sold": "number",
+        "gross_sales": "number (currency)",
+        "discounts": "number (currency)",
+        "net_sales": "number (currency)",
+        "cost_of_goods_sold": "number (currency)",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "quantity_sold": "number",
-      "gross_sales": "number (currency)",
-      "discounts": "number (currency)",
       "net_sales": "number (currency)",
-      "cost_of_goods_sold": "number (currency)",
       "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "quantity_sold": "number",
-    "net_sales": "number (currency)",
-    "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -4752,6 +5701,13 @@ Sales of this product
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -4763,7 +5719,8 @@ Sales of this product
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -4787,22 +5744,34 @@ Sales by Category report.
 
 ```json
 {
-  "data": [
-    {
-      "category_name": "string",
-      "product_count": "number",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "category_name": "string",
+        "product_count": "number",
+        "quantity_sold": "number",
+        "gross_sales": "number (currency)",
+        "net_sales": "number (currency)",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "quantity_sold": "number",
-      "gross_sales": "number (currency)",
       "net_sales": "number (currency)",
       "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "quantity_sold": "number",
-    "net_sales": "number (currency)",
-    "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  "app": "lestari"
 }
 ```
 
@@ -4843,20 +5812,32 @@ Daily Purchases report.
 
 ```json
 {
-  "data": [
-    {
-      "date": "date",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "date": "date",
+        "purchase_count": "number",
+        "item_quantity": "number",
+        "grand_total": "number (currency)",
+        "paid_amount": "number (currency)"
+      }
+    ],
+    "summary": {
       "purchase_count": "number",
-      "item_quantity": "number",
-      "grand_total": "number (currency)",
-      "paid_amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "purchase_count": "number",
-    "grand_total": "number (currency)"
+      "grand_total": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  "app": "lestari"
 }
 ```
 
@@ -4904,23 +5885,34 @@ Purchase Transactions report.
 
 ```json
 {
-  "data": [
-    {
-      "purchase_date": "date",
-      "receipt_number": "string",
-      "supplier_name": "string",
-      "staff_name": "string",
-      "payment_type": "string",
-      "grand_total": "number (currency)",
-      "paid_amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "purchase_count": "number",
-    "grand_total": "number (currency)"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "purchase_date": "date",
+        "receipt_number": "string",
+        "supplier_name": "string",
+        "staff_name": "string",
+        "payment_type": "string",
+        "grand_total": "number (currency)",
+        "paid_amount": "number (currency)"
+      }
+    ],
+    "summary": {
+      "purchase_count": "number",
+      "grand_total": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -4967,23 +5959,34 @@ Points by Customer report.
 
 ```json
 {
-  "data": [
-    {
-      "customer_name": "string",
-      "customer_code": "string",
-      "points_earned": "number",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "customer_name": "string",
+        "customer_code": "string",
+        "points_earned": "number",
+        "points_redeemed": "number",
+        "transaction_count": "number",
+        "points_balance": "number"
+      }
+    ],
+    "summary": {
       "points_redeemed": "number",
-      "transaction_count": "number",
-      "points_balance": "number"
-    }
-  ],
-  "summary": {
-    "points_redeemed": "number",
-    "points_earned": "number",
-    "transaction_count": "number"
+      "points_earned": "number",
+      "transaction_count": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -5015,6 +6018,13 @@ Point transactions
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -5026,7 +6036,8 @@ Point transactions
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5052,22 +6063,33 @@ Point Redemptions report.
 
 ```json
 {
-  "data": [
-    {
-      "product_name": "string",
-      "quantity": "number",
-      "transaction_count": "number",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "product_name": "string",
+        "quantity": "number",
+        "transaction_count": "number",
+        "points_redeemed": "number",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "points_redeemed": "number",
+      "quantity": "number",
       "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "points_redeemed": "number",
-    "quantity": "number",
-    "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -5098,6 +6120,13 @@ Redemptions
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -5109,7 +6138,8 @@ Redemptions
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5135,22 +6165,33 @@ Point-Earning Sales report.
 
 ```json
 {
-  "data": [
-    {
-      "product_name": "string",
-      "quantity": "number",
-      "transaction_count": "number",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "product_name": "string",
+        "quantity": "number",
+        "transaction_count": "number",
+        "points_earned": "number",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "points_earned": "number",
+      "quantity": "number",
       "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "points_earned": "number",
-    "quantity": "number",
-    "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -5181,6 +6222,13 @@ Sales
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -5192,7 +6240,8 @@ Sales
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5221,32 +6270,43 @@ List payables.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "reference_number": "string",
-      "supplier": {
-        "name": "string"
-      },
-      "transaction_date": "date (YYYY-MM-DD)",
-      "due_date": "date (YYYY-MM-DD)",
-      "total_amount": "number (currency)",
-      "paid_amount": "number (currency)",
-      "remaining_amount": "number (currency)",
-      "status": "string",
-      "payments": [
-        {
-          "payment_date": "date",
-          "amount": "number (currency)",
-          "payment_method": "string",
-          "note": "string"
-        }
-      ],
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "reference_number": "string",
+        "supplier": {
+          "name": "string"
+        },
+        "transaction_date": "date (YYYY-MM-DD)",
+        "due_date": "date (YYYY-MM-DD)",
+        "total_amount": "number (currency)",
+        "paid_amount": "number (currency)",
+        "remaining_amount": "number (currency)",
+        "status": "string",
+        "payments": [
+          {
+            "payment_date": "date",
+            "amount": "number (currency)",
+            "payment_method": "string",
+            "note": "string"
+          }
+        ],
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5260,6 +6320,13 @@ Get one payable.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "reference_number": "string",
@@ -5282,7 +6349,8 @@ Get one payable.
     ],
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5327,6 +6395,13 @@ Pay part or all of the outstanding amount.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "paid_amount": "number",
@@ -5339,7 +6414,8 @@ Pay part or all of the outstanding amount.
       "payment_method": "string",
       "note": "string|null"
     }
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5368,32 +6444,43 @@ List receivables.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "reference_number": "string",
-      "customer": {
-        "name": "string"
-      },
-      "transaction_date": "date (YYYY-MM-DD)",
-      "due_date": "date (YYYY-MM-DD)",
-      "total_amount": "number (currency)",
-      "paid_amount": "number (currency)",
-      "remaining_amount": "number (currency)",
-      "status": "string",
-      "payments": [
-        {
-          "payment_date": "date",
-          "amount": "number (currency)",
-          "payment_method": "string",
-          "note": "string"
-        }
-      ],
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "reference_number": "string",
+        "customer": {
+          "name": "string"
+        },
+        "transaction_date": "date (YYYY-MM-DD)",
+        "due_date": "date (YYYY-MM-DD)",
+        "total_amount": "number (currency)",
+        "paid_amount": "number (currency)",
+        "remaining_amount": "number (currency)",
+        "status": "string",
+        "payments": [
+          {
+            "payment_date": "date",
+            "amount": "number (currency)",
+            "payment_method": "string",
+            "note": "string"
+          }
+        ],
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5407,6 +6494,13 @@ Get one receivable.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "reference_number": "string",
@@ -5429,7 +6523,8 @@ Get one receivable.
     ],
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5474,6 +6569,13 @@ Pay part or all of the outstanding amount.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "paid_amount": "number",
@@ -5486,7 +6588,8 @@ Pay part or all of the outstanding amount.
       "payment_method": "string",
       "note": "string|null"
     }
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5512,22 +6615,33 @@ Value of stock on hand at cost.
 
 ```json
 {
-  "data": [
-    {
-      "product_name": "string",
-      "sku": "string",
-      "category_name": "string",
-      "stock": "number",
-      "unit_cost": "number (currency)",
-      "capital_value": "number (currency)"
-    }
-  ],
-  "summary": {
-    "total_capital": "number (currency)",
-    "total_stock": "number"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "product_name": "string",
+        "sku": "string",
+        "category_name": "string",
+        "stock": "number",
+        "unit_cost": "number (currency)",
+        "capital_value": "number (currency)"
+      }
+    ],
+    "summary": {
+      "total_capital": "number (currency)",
+      "total_stock": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -5571,32 +6685,43 @@ List sales returns.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "return_number": "string",
-      "receipt_number": "string",
-      "created_at": "datetime",
-      "customer": {
-        "name": "string"
-      },
-      "refund_method": "string",
-      "refund_amount": "number (currency)",
-      "reason": "string",
-      "items": [
-        {
-          "product_name": "string",
-          "quantity": "number",
-          "unit_price": "number (currency)",
-          "subtotal": "number (currency)"
-        }
-      ],
-      "item_count": "number",
-      "cashier_name": "string",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "return_number": "string",
+        "receipt_number": "string",
+        "created_at": "datetime",
+        "customer": {
+          "name": "string"
+        },
+        "refund_method": "string",
+        "refund_amount": "number (currency)",
+        "reason": "string",
+        "items": [
+          {
+            "product_name": "string",
+            "quantity": "number",
+            "unit_price": "number (currency)",
+            "subtotal": "number (currency)"
+          }
+        ],
+        "item_count": "number",
+        "cashier_name": "string",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5610,6 +6735,13 @@ Get one sales return.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "return_number": "string",
@@ -5632,7 +6764,8 @@ Get one sales return.
     "item_count": "number",
     "cashier_name": "string",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5679,31 +6812,42 @@ List purchase returns.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "return_number": "string",
-      "purchase_number": "string",
-      "created_at": "datetime",
-      "supplier": {
-        "name": "string"
-      },
-      "refund_method": "string",
-      "refund_amount": "number (currency)",
-      "reason": "string",
-      "items": [
-        {
-          "product_name": "string",
-          "quantity": "number",
-          "unit_cost": "number (currency)",
-          "subtotal": "number (currency)"
-        }
-      ],
-      "item_count": "number",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "return_number": "string",
+        "purchase_number": "string",
+        "created_at": "datetime",
+        "supplier": {
+          "name": "string"
+        },
+        "refund_method": "string",
+        "refund_amount": "number (currency)",
+        "reason": "string",
+        "items": [
+          {
+            "product_name": "string",
+            "quantity": "number",
+            "unit_cost": "number (currency)",
+            "subtotal": "number (currency)"
+          }
+        ],
+        "item_count": "number",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5717,6 +6861,13 @@ Get one purchase return.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "return_number": "string",
@@ -5738,7 +6889,8 @@ Get one purchase return.
     ],
     "item_count": "number",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5784,20 +6936,31 @@ Shifts report.
 
 ```json
 {
-  "data": [
-    {
-      "opened_at": "datetime",
-      "closed_at": "datetime",
-      "cash_drawer_name": "string",
-      "cashier_name": "string",
-      "opening_cash": "number (currency)",
-      "expected_cash": "number (currency)",
-      "actual_cash": "number (currency)",
-      "difference": "number (currency)"
-    }
-  ],
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "opened_at": "datetime",
+        "closed_at": "datetime",
+        "cash_drawer_name": "string",
+        "cashier_name": "string",
+        "opening_cash": "number (currency)",
+        "expected_cash": "number (currency)",
+        "actual_cash": "number (currency)",
+        "difference": "number (currency)"
+      }
+    ],
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5829,6 +6992,13 @@ Shift detail
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "cash_drawer_name": "string",
     "cashier_name": "string",
@@ -5848,7 +7018,8 @@ Shift detail
         "amount": "number (currency)"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -5886,21 +7057,32 @@ Fees on Sales report.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "receipt_number": "string",
-      "cashier_name": "string",
-      "fee_name": "string",
-      "amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "total_amount": "number (currency)",
-    "transaction_count": "number"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "receipt_number": "string",
+        "cashier_name": "string",
+        "fee_name": "string",
+        "amount": "number (currency)"
+      }
+    ],
+    "summary": {
+      "total_amount": "number (currency)",
+      "transaction_count": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -5946,21 +7128,32 @@ Fees on Purchases report.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "receipt_number": "string",
-      "cashier_name": "string",
-      "fee_name": "string",
-      "amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "total_amount": "number (currency)",
-    "transaction_count": "number"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "receipt_number": "string",
+        "cashier_name": "string",
+        "fee_name": "string",
+        "amount": "number (currency)"
+      }
+    ],
+    "summary": {
+      "total_amount": "number (currency)",
+      "transaction_count": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6007,23 +7200,34 @@ Merchant discount rate charged by card / e-wallet providers.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "receipt_number": "string",
-      "cashier_name": "string",
-      "payment_method": "string",
-      "transaction_amount": "number (currency)",
-      "mdr_rate": "number (0–100)",
-      "amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "total_amount": "number (currency)",
-    "transaction_count": "number"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "receipt_number": "string",
+        "cashier_name": "string",
+        "payment_method": "string",
+        "transaction_amount": "number (currency)",
+        "mdr_rate": "number (0–100)",
+        "amount": "number (currency)"
+      }
+    ],
+    "summary": {
+      "total_amount": "number (currency)",
+      "transaction_count": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6067,22 +7271,33 @@ Taxes report.
 
 ```json
 {
-  "data": [
-    {
-      "date": "date",
-      "tax_name": "string",
-      "rate": "number (0–100)",
-      "transaction_count": "number",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "date": "date",
+        "tax_name": "string",
+        "rate": "number (0–100)",
+        "transaction_count": "number",
+        "taxable_amount": "number (currency)",
+        "tax_amount": "number (currency)"
+      }
+    ],
+    "summary": {
       "taxable_amount": "number (currency)",
       "tax_amount": "number (currency)"
-    }
-  ],
-  "summary": {
-    "taxable_amount": "number (currency)",
-    "tax_amount": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6126,26 +7341,37 @@ PPOB Sales report.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "reference_id": "string",
-      "product_name": "string",
-      "customer_number": "string",
-      "base_price": "number (currency)",
-      "selling_price": "number (currency)",
-      "profit": "number (currency)",
-      "cashier_name": "string",
-      "status": "string"
-    }
-  ],
-  "summary": {
-    "transaction_count": "number",
-    "selling_total": "number (currency)",
-    "profit": "number (currency)"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "reference_id": "string",
+        "product_name": "string",
+        "customer_number": "string",
+        "base_price": "number (currency)",
+        "selling_price": "number (currency)",
+        "profit": "number (currency)",
+        "cashier_name": "string",
+        "status": "string"
+      }
+    ],
+    "summary": {
+      "transaction_count": "number",
+      "selling_total": "number (currency)",
+      "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6189,18 +7415,30 @@ Customer visits (transactions) grouped by time.
 
 ```json
 {
-  "data": [
-    {
-      "period": "string",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "period": "string",
+        "visitor_count": "number",
+        "net_sales": "number (currency)"
+      }
+    ],
+    "summary": {
       "visitor_count": "number",
-      "net_sales": "number (currency)"
-    }
-  ],
-  "summary": {
-    "visitor_count": "number",
-    "average_per_period": "number"
+      "average_per_period": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  "app": "lestari"
 }
 ```
 
@@ -6243,23 +7481,34 @@ Promotion Transactions report.
 
 ```json
 {
-  "data": [
-    {
-      "promotion_name": "string",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "promotion_name": "string",
+        "transaction_count": "number",
+        "discount_total": "number (currency)",
+        "net_sales": "number (currency)",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
       "transaction_count": "number",
       "discount_total": "number (currency)",
       "net_sales": "number (currency)",
       "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "transaction_count": "number",
-    "discount_total": "number (currency)",
-    "net_sales": "number (currency)",
-    "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6290,6 +7539,13 @@ Transactions
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -6301,7 +7557,8 @@ Transactions
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6328,23 +7585,34 @@ Promotion Product Sales report.
 
 ```json
 {
-  "data": [
-    {
-      "product_name": "string",
-      "promotion_name": "string",
-      "quantity": "number",
-      "discount_total": "number (currency)",
-      "net_sales": "number (currency)",
-      "profit": "number (currency)"
-    }
-  ],
-  "summary": {
-    "transaction_count": "number",
-    "profit": "number (currency)",
-    "net_sales": "number (currency)"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "product_name": "string",
+        "promotion_name": "string",
+        "quantity": "number",
+        "discount_total": "number (currency)",
+        "net_sales": "number (currency)",
+        "profit": "number (currency)"
+      }
+    ],
+    "summary": {
+      "transaction_count": "number",
+      "profit": "number (currency)",
+      "net_sales": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6376,6 +7644,13 @@ Sales
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sales": [
       {
@@ -6387,7 +7662,8 @@ Sales
         "grand_total": "number"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6413,21 +7689,32 @@ Store Ratings report.
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "customer_name": "string",
-      "rating": "string",
-      "comment": "string",
-      "receipt_number": "string"
-    }
-  ],
-  "summary": {
-    "average_rating": "number",
-    "review_count": "number"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "customer_name": "string",
+        "rating": "string",
+        "comment": "string",
+        "receipt_number": "string"
+      }
+    ],
+    "summary": {
+      "average_rating": "number",
+      "review_count": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -6460,6 +7747,13 @@ Review
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "customer_name": "string",
     "rating": "number",
@@ -6469,7 +7763,8 @@ Review
     ],
     "receipt_number": "string",
     "created_at": "datetime (ISO 8601)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6499,19 +7794,30 @@ List branch billing.
 
 ```json
 {
-  "data": [
-    {
-      "branch_id": "string (uuid)",
-      "branch_name": "string",
-      "plan": "string",
-      "expires_at": "date",
-      "status": "string",
-      "renewal_price": "number (currency)",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "branch_id": "string (uuid)",
+        "branch_name": "string",
+        "plan": "string",
+        "expires_at": "date",
+        "status": "string",
+        "renewal_price": "number (currency)",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6536,6 +7842,13 @@ Create one invoice renewing several branches.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "invoice_id": "string (uuid)",
     "invoice_number": "string",
@@ -6545,7 +7858,8 @@ Create one invoice renewing several branches.
     "payment_url": "string|null",
     "payment_instructions": "string|null",
     "expires_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6569,21 +7883,33 @@ Sales performance of every branch side by side.
 
 ```json
 {
-  "data": [
-    {
-      "branch_name": "string",
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "branch_name": "string",
+        "transaction_count": "number",
+        "revenue": "number (currency)",
+        "profit": "number (currency)",
+        "average_basket": "number (currency)"
+      }
+    ],
+    "summary": {
       "transaction_count": "number",
       "revenue": "number (currency)",
-      "profit": "number (currency)",
-      "average_basket": "number (currency)"
-    }
-  ],
-  "summary": {
-    "transaction_count": "number",
-    "revenue": "number (currency)",
-    "profit": "number (currency)"
+      "profit": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  "app": "lestari"
 }
 ```
 
@@ -6628,21 +7954,32 @@ List branch products.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "selling_price": "number (currency)",
-      "purchase_price": "number (currency)",
-      "is_available": "boolean",
-      "branch_name": "string",
-      "product_name": "string",
-      "sku": "string",
-      "stock": "number",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "selling_price": "number (currency)",
+        "purchase_price": "number (currency)",
+        "is_available": "boolean",
+        "branch_name": "string",
+        "product_name": "string",
+        "sku": "string",
+        "stock": "number",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6666,6 +8003,13 @@ Update a branch product. Only attributes present in the body are written; send n
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "selling_price": "number (currency)",
@@ -6677,7 +8021,8 @@ Update a branch product. Only attributes present in the body are written; send n
     "stock": "number",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6721,9 +8066,17 @@ Overwrite branch prices with head-office prices.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "updated": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6751,35 +8104,46 @@ List stock transfers.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "to_branch_id": "string (uuid, branches id) | null",
-      "to_branch": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "name": "string"
-      },
-      "transfer_date": "date (YYYY-MM-DD)",
-      "requires_confirmation": "boolean",
-      "items": [
-        {
-          "product_id": "string (uuid, products id) | null",
-          "quantity": "number",
-          "note": "string"
-        }
-      ],
-      "note": "string",
-      "transfer_number": "string",
-      "from_branch": {
-        "name": "string"
-      },
-      "total_quantity": "number",
-      "status": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "to_branch_id": "string (uuid, branches id) | null",
+        "to_branch": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "transfer_date": "date (YYYY-MM-DD)",
+        "requires_confirmation": "boolean",
+        "items": [
+          {
+            "product_id": "string (uuid, products id) | null",
+            "quantity": "number",
+            "note": "string"
+          }
+        ],
+        "note": "string",
+        "transfer_number": "string",
+        "from_branch": {
+          "name": "string"
+        },
+        "total_quantity": "number",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6809,6 +8173,13 @@ Create a stock transfer.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "to_branch_id": "string (uuid, branches id) | null",
@@ -6834,7 +8205,8 @@ Create a stock transfer.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6848,6 +8220,13 @@ Get one stock transfer.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "to_branch_id": "string (uuid, branches id) | null",
@@ -6873,7 +8252,8 @@ Get one stock transfer.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6923,20 +8303,31 @@ Transfer Report report.
 
 ```json
 {
-  "data": [
-    {
-      "transfer_date": "date",
-      "transfer_number": "string",
-      "direction": "string",
-      "from_branch_name": "string",
-      "to_branch_name": "string",
-      "item_count": "number",
-      "total_quantity": "number",
-      "status": "string"
-    }
-  ],
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "transfer_date": "date",
+        "transfer_number": "string",
+        "direction": "string",
+        "from_branch_name": "string",
+        "to_branch_name": "string",
+        "item_count": "number",
+        "total_quantity": "number",
+        "status": "string"
+      }
+    ],
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  },
+  "app": "lestari"
 }
 ```
 
@@ -6984,20 +8375,31 @@ Transfers Awaiting Confirmation report.
 
 ```json
 {
-  "data": [
-    {
-      "transfer_date": "date",
-      "transfer_number": "string",
-      "direction": "string",
-      "from_branch_name": "string",
-      "to_branch_name": "string",
-      "item_count": "number",
-      "total_quantity": "number",
-      "status": "string"
-    }
-  ],
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "transfer_date": "date",
+        "transfer_number": "string",
+        "direction": "string",
+        "from_branch_name": "string",
+        "to_branch_name": "string",
+        "item_count": "number",
+        "total_quantity": "number",
+        "status": "string"
+      }
+    ],
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7045,7 +8447,15 @@ Accept
 
 ```json
 {
-  "data": "<StockTransfer>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<StockTransfer>",
+  "app": "lestari"
 }
 ```
 
@@ -7067,7 +8477,15 @@ Reject
 
 ```json
 {
-  "data": "<StockTransfer>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<StockTransfer>",
+  "app": "lestari"
 }
 ```
 
@@ -7094,22 +8512,33 @@ List branches.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "code": "string",
-      "manager_name": "string",
-      "phone": "string",
-      "email": "string (email)",
-      "address": "string",
-      "is_head_office": "boolean",
-      "subscription_expires_at": "date",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "code": "string",
+        "manager_name": "string",
+        "phone": "string",
+        "email": "string (email)",
+        "address": "string",
+        "is_head_office": "boolean",
+        "subscription_expires_at": "date",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7135,6 +8564,13 @@ Create a branch.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -7147,7 +8583,8 @@ Create a branch.
     "subscription_expires_at": "date",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7161,6 +8598,13 @@ Get one branch.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -7173,7 +8617,8 @@ Get one branch.
     "subscription_expires_at": "date",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7201,6 +8646,13 @@ Update a branch. Only attributes present in the body are written; send null to c
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -7213,7 +8665,8 @@ Update a branch. Only attributes present in the body are written; send null to c
     "subscription_expires_at": "date",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7248,10 +8701,18 @@ Clone the head-office catalog into a branch.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "job_id": "string (uuid)",
     "status": "\"queued\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7272,6 +8733,13 @@ Read profile settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "avatar_url": "string (URL from POST /uploads) | null",
     "name": "string",
@@ -7300,7 +8768,8 @@ Read profile settings.
         "newsletter": "boolean"
       }
     }
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7344,6 +8813,13 @@ Save profile settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "avatar_url": "string (URL from POST /uploads) | null",
     "name": "string",
@@ -7372,7 +8848,8 @@ Save profile settings.
         "newsletter": "boolean"
       }
     }
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7395,9 +8872,17 @@ Change PPOB PIN
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "changed": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7409,11 +8894,19 @@ Deactivate account
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "status": "\"pending\"",
     "created_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7434,9 +8927,17 @@ Send an OTP to the phone number (SMS or WhatsApp).
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "expires_in": "integer (seconds)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7457,9 +8958,17 @@ Confirm the phone OTP.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "phone_verified": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7471,11 +8980,19 @@ Start authenticator-app setup.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "secret": "string",
     "otpauth_url": "string",
     "qr_code_svg": "string"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7495,12 +9012,20 @@ Enable 2FA after confirming a code from the app.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "enabled": "boolean",
     "recovery_codes": [
       "string"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7520,9 +9045,17 @@ Turn 2FA off.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "enabled": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7541,17 +9074,28 @@ Sign-ins and important changes by the owner.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "created_at": "datetime",
-      "action": "string",
-      "description": "string",
-      "ip_address": "string",
-      "user_agent": "string"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "created_at": "datetime",
+        "action": "string",
+        "description": "string",
+        "ip_address": "string",
+        "user_agent": "string"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7567,6 +9111,13 @@ Read physical store settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "logo_url": "string (URL from POST /uploads) | null",
     "cover_url": "string (URL from POST /uploads) | null",
@@ -7586,7 +9137,8 @@ Read physical store settings.
     "stock_valuation_method": "\"default\" | \"fifo\" | \"lifo\" | \"average\"",
     "currency": "\"IDR\" | \"MYR\" | \"SGD\" | \"USD\" | \"AUD\" | \"EUR\"",
     "timezone": "\"Asia/Jakarta\" | \"Asia/Makassar\" | \"Asia/Jayapura\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7623,6 +9175,13 @@ Save physical store settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "logo_url": "string (URL from POST /uploads) | null",
     "cover_url": "string (URL from POST /uploads) | null",
@@ -7642,7 +9201,8 @@ Save physical store settings.
     "stock_valuation_method": "\"default\" | \"fifo\" | \"lifo\" | \"average\"",
     "currency": "\"IDR\" | \"MYR\" | \"SGD\" | \"USD\" | \"AUD\" | \"EUR\"",
     "timezone": "\"Asia/Jakarta\" | \"Asia/Makassar\" | \"Asia/Jayapura\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7669,13 +9229,21 @@ Province list for address pickers.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "id": "string (uuid)",
       "code": "string (Kemendagri code)",
       "name": "string"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -7694,13 +9262,21 @@ City / regency list.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "id": "string (uuid)",
       "name": "string",
       "province_id": "string (uuid)"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -7716,6 +9292,13 @@ Read online store settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "subdomain": "string",
@@ -7731,7 +9314,8 @@ Read online store settings.
     "notify_staff_ids": [
       "string (uuid, staff id)"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7764,6 +9348,13 @@ Save online store settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "subdomain": "string",
@@ -7779,7 +9370,8 @@ Save online store settings.
     "notify_staff_ids": [
       "string (uuid, staff id)"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7796,6 +9388,13 @@ Read link page settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "username": "string",
@@ -7810,7 +9409,8 @@ Read link page settings.
         "is_active": "boolean"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7842,6 +9442,13 @@ Save link page settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "username": "string",
@@ -7856,7 +9463,8 @@ Save link page settings.
         "is_active": "boolean"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7875,14 +9483,25 @@ Visitors of the link page.
 
 ```json
 {
-  "data": [
-    {
-      "ip_address": "string",
-      "visited_at": "datetime",
-      "referrer": "string|null"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "ip_address": "string",
+        "visited_at": "datetime",
+        "referrer": "string|null"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7900,9 +9519,17 @@ Check a link-page username.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "available": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7919,6 +9546,13 @@ Read qr order settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "order_expiry_hours": "3 | 6 | 12 | 24",
@@ -7936,7 +9570,8 @@ Read qr order settings.
     "notify_staff_ids": [
       "string (uuid, staff id)"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -7971,6 +9606,13 @@ Save qr order settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "order_expiry_hours": "3 | 6 | 12 | 24",
@@ -7988,7 +9630,8 @@ Save qr order settings.
     "notify_staff_ids": [
       "string (uuid, staff id)"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8023,27 +9666,38 @@ List payment methods.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "type": "\"cash\" | \"debit\" | \"credit_card\" | \"qris\" | \"e_wallet\" | \"bank_transfer\" | \"other\"",
-      "code": "string",
-      "mdr_type": "\"percent\" | \"amount\"",
-      "mdr_value": "number",
-      "charge_fee_to_customer": "boolean",
-      "edc_card_rates": [
-        {
-          "card_brand": "\"visa\" | \"mastercard\" | \"amex\" | \"jcb\" | \"unionpay\" | \"debit\" | \"flazz\" | \"other\"",
-          "mdr_percent": "number (0–100)"
-        }
-      ],
-      "is_active": "boolean",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "name": "string",
+        "type": "\"cash\" | \"debit\" | \"credit_card\" | \"qris\" | \"e_wallet\" | \"bank_transfer\" | \"other\"",
+        "code": "string",
+        "mdr_type": "\"percent\" | \"amount\"",
+        "mdr_value": "number",
+        "charge_fee_to_customer": "boolean",
+        "edc_card_rates": [
+          {
+            "card_brand": "\"visa\" | \"mastercard\" | \"amex\" | \"jcb\" | \"unionpay\" | \"debit\" | \"flazz\" | \"other\"",
+            "mdr_percent": "number (0–100)"
+          }
+        ],
+        "is_active": "boolean",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8075,6 +9729,13 @@ Create a payment method.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -8092,7 +9753,8 @@ Create a payment method.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8106,6 +9768,13 @@ Get one payment method.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -8123,7 +9792,8 @@ Get one payment method.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8157,6 +9827,13 @@ Update a payment method. Only attributes present in the body are written; send n
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -8174,7 +9851,8 @@ Update a payment method. Only attributes present in the body are written; send n
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8200,11 +9878,19 @@ Read default tax settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "rate": "number (0–100)",
     "is_inclusive": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8226,11 +9912,19 @@ Save default tax settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "rate": "number (0–100)",
     "is_inclusive": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8246,12 +9940,20 @@ Read service charge settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "name": "string",
     "rate": "number (0–100)",
     "apply_before_tax": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8274,12 +9976,20 @@ Save service charge settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "name": "string",
     "rate": "number (0–100)",
     "apply_before_tax": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8295,11 +10005,19 @@ Read rounding settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "mode": "\"nearest\" | \"up\" | \"down\"",
     "multiple": "50 | 100 | 500 | 1000"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8321,11 +10039,19 @@ Save rounding settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "is_enabled": "boolean",
     "mode": "\"nearest\" | \"up\" | \"down\"",
     "multiple": "50 | 100 | 500 | 1000"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8341,13 +10067,21 @@ Read storage settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "plan": "string",
     "used_mb": "number",
     "quota_mb": "number",
     "transaction_count": "number",
     "expires_at": "date (YYYY-MM-DD)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8368,11 +10102,19 @@ Buy more storage
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "quota_mb": "number",
     "expires_at": "date",
     "coin_balance": "number"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8396,10 +10138,18 @@ Send a one-time code to the owner before a reset.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "expires_in": "integer (seconds)",
     "sent_to": "string (masked)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8425,10 +10175,18 @@ Permanently delete the selected data.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "job_id": "string (uuid)",
     "status": "\"queued\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8444,6 +10202,13 @@ Available add-ons and their status for this store.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "code": "\"business\" | \"ingredients\" | \"desktop\" | \"server\" | \"food_menu\" | \"attendance\"",
@@ -8458,7 +10223,8 @@ Available add-ons and their status for this store.
       "trial_available": "boolean",
       "expires_at": "datetime|null"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -8481,7 +10247,15 @@ Buy or renew a plugin.
 
 ```json
 {
-  "data": "<Invoice>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Invoice>",
+  "app": "lestari"
 }
 ```
 
@@ -8495,11 +10269,19 @@ Start the 7-day free trial.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "code": "string",
     "status": "\"trial\"",
     "expires_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8515,6 +10297,13 @@ Read receipt settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "logo_url": "string (URL from POST /uploads) | null",
     "header_note": "string",
@@ -8534,7 +10323,8 @@ Read receipt settings.
     "hide_tax_percentage": "boolean",
     "show_feedback_link": "boolean",
     "show_qr_code": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8571,6 +10361,13 @@ Save receipt settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "logo_url": "string (URL from POST /uploads) | null",
     "header_note": "string",
@@ -8590,7 +10387,8 @@ Save receipt settings.
     "hide_tax_percentage": "boolean",
     "show_feedback_link": "boolean",
     "show_qr_code": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8617,26 +10415,37 @@ List staff.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "name": "string",
-      "email": "string (email)",
-      "phone": "string",
-      "role": "\"administrator\" | \"manager\" | \"cashier\"",
-      "branch_id": "string (uuid, branches id) | null",
-      "branch": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "name": "string"
-      },
-      "address": "string",
-      "status": "string",
-      "last_login_at": "datetime",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "name": "string",
+        "email": "string (email)",
+        "phone": "string",
+        "role": "\"administrator\" | \"manager\" | \"cashier\"",
+        "branch_id": "string (uuid, branches id) | null",
+        "branch": {
+          "id": "string (uuid)",
+          "name": "string"
+        },
+        "address": "string",
+        "status": "string",
+        "last_login_at": "datetime",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8663,6 +10472,13 @@ Create a staff member.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -8679,7 +10495,8 @@ Create a staff member.
     "last_login_at": "datetime",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8693,6 +10510,13 @@ Get one staff member.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -8709,7 +10533,8 @@ Get one staff member.
     "last_login_at": "datetime",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8738,6 +10563,13 @@ Update a staff member. Only attributes present in the body are written; send nul
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "name": "string",
@@ -8754,7 +10586,8 @@ Update a staff member. Only attributes present in the body are written; send nul
     "last_login_at": "datetime",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8786,9 +10619,17 @@ Delete several at once.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "deleted": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8812,11 +10653,19 @@ Access rights
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "permissions": [
       "string"
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8830,9 +10679,17 @@ Resend invitation email
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "sent": "boolean"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8846,6 +10703,13 @@ Current access rights.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "permissions": [
       "string"
@@ -8856,7 +10720,8 @@ Current access rights.
         "label": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8877,16 +10742,27 @@ What a staff member did.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "created_at": "datetime",
-      "action": "string",
-      "description": "string",
-      "ip_address": "string"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "created_at": "datetime",
+        "action": "string",
+        "description": "string",
+        "ip_address": "string"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8904,10 +10780,18 @@ Extra cost of adding staff accounts.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "monthly_cost": "number",
     "currency": "string"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -8933,24 +10817,35 @@ Staff Attendance report.
 
 ```json
 {
-  "data": [
-    {
-      "date": "date",
-      "staff_name": "string",
-      "clock_in_at": "datetime",
-      "clock_out_at": "datetime",
-      "hours": "number",
-      "status": "string",
-      "location": "string"
-    }
-  ],
-  "summary": {
-    "attendance_count": "number",
-    "late_count": "number",
-    "total_hours": "number"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "date": "date",
+        "staff_name": "string",
+        "clock_in_at": "datetime",
+        "clock_out_at": "datetime",
+        "hours": "number",
+        "status": "string",
+        "location": "string"
+      }
+    ],
+    "summary": {
+      "attendance_count": "number",
+      "late_count": "number",
+      "total_hours": "number"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -8981,6 +10876,13 @@ Attendance
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "staff_name": "string",
     "clock_in_at": "datetime (ISO 8601)",
@@ -8989,7 +10891,8 @@ Attendance
     "clock_out_photo_url": "string (URL from POST /uploads) | null",
     "location": "string",
     "note": "string"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9016,25 +10919,36 @@ List support access.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "platform": "\"web\" | \"app\"",
-      "account_id": "string (uuid, help-access/accounts id) | null",
-      "account": {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
         "id": "string (uuid)",
-        "label": "string"
-      },
-      "duration_hours": "1 | 6 | 24 | 72",
-      "description": "string",
-      "account_email": "string",
-      "expires_at": "datetime (ISO 8601)",
-      "status": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+        "platform": "\"web\" | \"app\"",
+        "account_id": "string (uuid, help-access/accounts id) | null",
+        "account": {
+          "id": "string (uuid)",
+          "label": "string"
+        },
+        "duration_hours": "1 | 6 | 24 | 72",
+        "description": "string",
+        "account_email": "string",
+        "expires_at": "datetime (ISO 8601)",
+        "status": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9057,6 +10971,13 @@ Create a support access.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "platform": "\"web\" | \"app\"",
@@ -9072,7 +10993,8 @@ Create a support access.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9086,6 +11008,13 @@ Get one support access.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "platform": "\"web\" | \"app\"",
@@ -9101,7 +11030,8 @@ Get one support access.
     "status": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9115,7 +11045,15 @@ Revoke access
 
 ```json
 {
-  "data": "<HelpAccess>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<HelpAccess>",
+  "app": "lestari"
 }
 ```
 
@@ -9127,6 +11065,13 @@ Owner and staff accounts that can be shared with support.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "id": "string (uuid)",
@@ -9134,7 +11079,8 @@ Owner and staff accounts that can be shared with support.
       "email": "string",
       "role": "string"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -9150,11 +11096,19 @@ Read back office appearance settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "color_theme": "\"emerald\" | \"ivory\" | \"charcoal\"",
     "show_breadcrumbs": "boolean",
     "language": "\"en\" | \"id\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9176,11 +11130,19 @@ Save back office appearance settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "color_theme": "\"emerald\" | \"ivory\" | \"charcoal\"",
     "show_breadcrumbs": "boolean",
     "language": "\"en\" | \"id\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9212,36 +11174,47 @@ List online orders.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "order_number": "string",
-      "created_at": "datetime",
-      "status": "string",
-      "customer_name": "string",
-      "customer_phone": "string",
-      "shipping_address": "string",
-      "shipping_method": "string",
-      "courier": "string",
-      "tracking_number": "string",
-      "payment_method": "string",
-      "payment_proof_url": "string (URL from POST /uploads) | null",
-      "items": [
-        {
-          "product_name": "string",
-          "quantity": "number",
-          "unit_price": "number (currency)",
-          "subtotal": "number (currency)"
-        }
-      ],
-      "subtotal": "number (currency)",
-      "shipping_fee": "number (currency)",
-      "grand_total": "number (currency)",
-      "customer_note": "string",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "order_number": "string",
+        "created_at": "datetime",
+        "status": "string",
+        "customer_name": "string",
+        "customer_phone": "string",
+        "shipping_address": "string",
+        "shipping_method": "string",
+        "courier": "string",
+        "tracking_number": "string",
+        "payment_method": "string",
+        "payment_proof_url": "string (URL from POST /uploads) | null",
+        "items": [
+          {
+            "product_name": "string",
+            "quantity": "number",
+            "unit_price": "number (currency)",
+            "subtotal": "number (currency)"
+          }
+        ],
+        "subtotal": "number (currency)",
+        "shipping_fee": "number (currency)",
+        "grand_total": "number (currency)",
+        "customer_note": "string",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9255,6 +11228,13 @@ Get one order.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "order_number": "string",
@@ -9281,7 +11261,8 @@ Get one order.
     "grand_total": "number (currency)",
     "customer_note": "string",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9323,7 +11304,15 @@ Move the order to "processing".
 
 ```json
 {
-  "data": "<CatalogOrder>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<CatalogOrder>",
+  "app": "lestari"
 }
 ```
 
@@ -9350,6 +11339,13 @@ Read shipping & payment settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "bank_transfer_enabled": "boolean",
     "direct_payment_enabled": "boolean",
@@ -9374,7 +11370,8 @@ Read shipping & payment settings.
         "fee": "number (currency)"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9416,6 +11413,13 @@ Save shipping & payment settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "bank_transfer_enabled": "boolean",
     "direct_payment_enabled": "boolean",
@@ -9440,7 +11444,8 @@ Save shipping & payment settings.
         "fee": "number (currency)"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9467,20 +11472,31 @@ List payout accounts.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "type": "\"bank\" | \"e_wallet\" | \"qris\"",
-      "provider": "string",
-      "account_name": "string",
-      "account_number": "string",
-      "qris_image_url": "string (URL from POST /uploads) | null",
-      "is_active": "boolean",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "type": "\"bank\" | \"e_wallet\" | \"qris\"",
+        "provider": "string",
+        "account_name": "string",
+        "account_number": "string",
+        "qris_image_url": "string (URL from POST /uploads) | null",
+        "is_active": "boolean",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9505,6 +11521,13 @@ Create a account.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 201,
+  "status": "Created",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "type": "\"bank\" | \"e_wallet\" | \"qris\"",
@@ -9515,7 +11538,8 @@ Create a account.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9529,6 +11553,13 @@ Get one account.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "type": "\"bank\" | \"e_wallet\" | \"qris\"",
@@ -9539,7 +11570,8 @@ Get one account.
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9566,6 +11598,13 @@ Update a account. Only attributes present in the body are written; send null to 
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "type": "\"bank\" | \"e_wallet\" | \"qris\"",
@@ -9576,7 +11615,8 @@ Update a account. Only attributes present in the body are written; send null to 
     "is_active": "boolean",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9616,23 +11656,34 @@ Prepaid balance used to sell phone credit, data, electricity tokens and bill pay
 
 ```json
 {
-  "data": [
-    {
-      "created_at": "datetime",
-      "reference_id": "string",
-      "type": "string",
-      "payment_method": "string",
-      "amount": "number (currency)",
-      "balance_after": "number (currency)",
-      "status": "string"
-    }
-  ],
-  "summary": {
-    "balance": "number (currency)",
-    "transaction_total": "number (currency)"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "created_at": "datetime",
+        "reference_id": "string",
+        "type": "string",
+        "payment_method": "string",
+        "amount": "number (currency)",
+        "balance_after": "number (currency)",
+        "status": "string"
+      }
+    ],
+    "summary": {
+      "balance": "number (currency)",
+      "transaction_total": "number (currency)"
+    },
+    "totals": "{ <column>: number } | null (sums of numeric columns, optional)"
   },
-  "totals": "{ <column>: number } | null (sums of numeric columns, optional)",
-  "meta": "<Pagination>"
+  "app": "lestari"
 }
 ```
 
@@ -9654,6 +11705,13 @@ Top up balance
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "reference_id": "string",
@@ -9663,7 +11721,8 @@ Top up balance
     "payment_url": "string|null",
     "payment_instructions": "string|null",
     "expires_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9685,7 +11744,15 @@ Upload transfer proof
 
 ```json
 {
-  "data": "<PpobDeposit>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<PpobDeposit>",
+  "app": "lestari"
 }
 ```
 
@@ -9699,7 +11766,15 @@ Cancel
 
 ```json
 {
-  "data": "<PpobDeposit>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<PpobDeposit>",
+  "app": "lestari"
 }
 ```
 
@@ -9726,20 +11801,31 @@ List ppob prepaid prices.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "product_name": "string",
-      "base_price": "number (currency)",
-      "selling_price": "number (currency)",
-      "is_active": "boolean",
-      "category": "string",
-      "provider": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "product_name": "string",
+        "base_price": "number (currency)",
+        "selling_price": "number (currency)",
+        "is_active": "boolean",
+        "category": "string",
+        "provider": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9762,6 +11848,13 @@ Update a price. Only attributes present in the body are written; send null to cl
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "product_name": "string",
@@ -9772,7 +11865,8 @@ Update a price. Only attributes present in the body are written; send null to cl
     "provider": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9792,6 +11886,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -9802,7 +11903,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9855,19 +11957,30 @@ List ppob postpaid fees.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "product_name": "string",
-      "base_admin_fee": "number (currency)",
-      "admin_fee": "number (currency)",
-      "is_active": "boolean",
-      "category": "string",
-      "created_at": "datetime",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "product_name": "string",
+        "base_admin_fee": "number (currency)",
+        "admin_fee": "number (currency)",
+        "is_active": "boolean",
+        "category": "string",
+        "created_at": "datetime",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9890,6 +12003,13 @@ Update a price. Only attributes present in the body are written; send null to cl
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "product_name": "string",
@@ -9899,7 +12019,8 @@ Update a price. Only attributes present in the body are written; send null to cl
     "category": "string",
     "created_at": "datetime",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9919,6 +12040,13 @@ Import rows from a spreadsheet.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "created": "integer",
     "updated": "integer",
@@ -9929,7 +12057,8 @@ Import rows from a spreadsheet.
         "message": "string"
       }
     ]
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -9975,12 +12104,20 @@ Read referral program settings.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "code": "string",
     "share_url": "string",
     "referred_count": "number",
     "reward_balance": "number (currency)"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10002,10 +12139,18 @@ Create referral code
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "code": "string",
     "share_url": "string"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10017,11 +12162,19 @@ Move rewards to coins
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "transferred": "number",
     "coin_balance": "number",
     "reward_balance": "number"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10040,6 +12193,13 @@ Connectable services (payments, accounting…).
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "code": "string (e.g. \"dana\", \"jurnal\")",
@@ -10050,7 +12210,8 @@ Connectable services (payments, accounting…).
       "terms_url": "string|null",
       "connected_at": "datetime|null"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -10073,11 +12234,19 @@ Connect a service (after accepting its terms).
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "code": "string",
     "status": "\"pending\" | \"active\"",
     "redirect_url": "string|null"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10091,10 +12260,18 @@ Disconnect a service.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "code": "string",
     "status": "\"inactive\""
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10113,6 +12290,13 @@ Lending partners and their terms.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "code": "string",
@@ -10127,7 +12311,8 @@ Lending partners and their terms.
       "interest_info": "string",
       "info_url": "string|null"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -10139,6 +12324,13 @@ Your loan applications.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": [
     {
       "id": "string (uuid)",
@@ -10148,7 +12340,8 @@ Your loan applications.
       "status": "\"submitted\" | \"in_review\" | \"approved\" | \"rejected\" | \"disbursed\"",
       "created_at": "datetime"
     }
-  ]
+  ],
+  "app": "lestari"
 }
 ```
 
@@ -10172,11 +12365,19 @@ Apply for a loan (store data is shared with the partner).
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "status": "\"submitted\"",
     "redirect_url": "string|null"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10208,20 +12409,31 @@ List notifications.
 
 ```json
 {
-  "data": [
-    {
-      "id": "string (uuid)",
-      "title": "string",
-      "message": "string",
-      "created_at": "datetime",
-      "source": "string",
-      "link_route": "string",
-      "attachment_url": "string (URL from POST /uploads) | null",
-      "read_at": "string",
-      "updated_at": "datetime"
-    }
-  ],
-  "meta": "<Pagination>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": {
+    "links": "<Links>",
+    "info": "<Info>",
+    "rows": [
+      {
+        "id": "string (uuid)",
+        "title": "string",
+        "message": "string",
+        "created_at": "datetime",
+        "source": "string",
+        "link_route": "string",
+        "attachment_url": "string (URL from POST /uploads) | null",
+        "read_at": "string",
+        "updated_at": "datetime"
+      }
+    ]
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10235,6 +12447,13 @@ Get one notification.
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "id": "string (uuid)",
     "title": "string",
@@ -10245,7 +12464,8 @@ Get one notification.
     "attachment_url": "string (URL from POST /uploads) | null",
     "read_at": "string",
     "updated_at": "datetime"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10257,9 +12477,17 @@ Mark all as read
 
 ```json
 {
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
   "data": {
     "updated": "integer"
-  }
+  },
+  "app": "lestari"
 }
 ```
 
@@ -10273,7 +12501,15 @@ Mark as read
 
 ```json
 {
-  "data": "<Notification>"
+  "request_id": "string",
+  "request_url": "string",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "datetime",
+  "latency": "string",
+  "data": "<Notification>",
+  "app": "lestari"
 }
 ```
 

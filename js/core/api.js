@@ -2,7 +2,10 @@
  * Thin fetch wrapper for the Lestari backend.
  *  - Sends `Authorization: Bearer <token>`, `X-Branch-Id` (when a branch is selected) and
  *    `Accept-Language` (en / id) so server messages and documents follow the chosen language.
- *  - Expects the JSON envelope documented in ENDPOINTS.md: { data, meta?, summary? } or { error }.
+ *  - Expects the response envelope documented in ENDPOINTS.md:
+ *      { request_id, request_url, status_code, status, message, timestamp, latency, data, app }
+ *    Lists carry { links, info, rows, summary?, totals?, chart? } in `data`; errors carry { code, fields? }.
+ *    `unwrap` turns that into what the pages use: { data, meta?, summary?, totals?, chart?, message, requestId }.
  *  - On 401 it tries one refresh, then sends the user back to the login page.
  *  - Passwords are sent base64-encoded (UTF-8 bytes, standard alphabet): see `encodePassword`.
  */
@@ -17,12 +20,26 @@
 
   class ApiError extends Error {
     constructor(status, payload) {
-      const err = (payload && payload.error) || {};
-      super(err.message || ('Request failed (' + status + ')'));
+      const info = (payload && payload.data) || {};
+      super((payload && payload.message) || ('Request failed (' + status + ')'));
       this.status = status;
-      this.code = err.code || 'http_' + status;
-      this.fields = err.fields || {};
+      this.code = info.code || 'http_' + status;
+      this.fields = info.fields || {};
+      this.requestId = (payload && payload.request_id) || '';
     }
+  }
+
+  /** Response envelope → { data, meta?, summary?, totals?, chart?, message, requestId }. */
+  function unwrap(payload) {
+    if (!payload) return { data: null };
+    const out = { data: payload.data === undefined ? null : payload.data, message: payload.message || '', requestId: payload.request_id || '' };
+    const d = payload.data;
+    if (d && typeof d === 'object' && !Array.isArray(d) && d.info && d.links && 'rows' in d) {
+      out.data = d.rows || [];
+      out.meta = { page: d.info.page, per_page: d.info.limit, total: d.info.total, total_pages: d.info.pages, links: d.links };
+      ['summary', 'totals', 'chart'].forEach((k) => { if (d[k] !== undefined) out[k] = d[k]; });
+    }
+    return out;
   }
 
   /** Base64-encode a password (UTF-8 safe) the way the backend expects it. Empty stays empty. */
@@ -96,12 +113,12 @@
     try {
       res = await fetch(buildUrl(path, opts.query), init);
     } catch (e) {
-      throw new ApiError(0, { error: { code: 'network_error', message: 'Cannot reach the server at ' + cfg.apiBaseUrl } });
+      throw new ApiError(0, { message: 'Cannot reach the server at ' + cfg.apiBaseUrl, data: { code: 'network_error' } });
     }
     if (res.status === 401 && !opts._retried && path !== '/auth/login') {
       if (await tryRefresh()) return request(method, path, Object.assign({}, opts, { _retried: true }));
       goLogin();
-      throw new ApiError(401, { error: { code: 'unauthenticated', message: 'Session expired, please sign in again.' } });
+      throw new ApiError(401, { message: 'Session expired, please sign in again.', data: { code: 'unauthenticated' } });
     }
     if (opts.blob) {
       if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
@@ -110,7 +127,7 @@
     if (res.status === 204) return { data: null };
     const payload = await res.json().catch(() => null);
     if (!res.ok) throw new ApiError(res.status, payload);
-    return payload || { data: null };
+    return unwrap(payload);
   }
 
   function filenameFrom(res) {
@@ -131,6 +148,7 @@
 
   root.Api = {
     ApiError,
+    unwrap,
     store,
     get: (p, query) => request('GET', p, { query }),
     post: (p, body) => request('POST', p, { body }),

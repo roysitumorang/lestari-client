@@ -17,6 +17,24 @@ const SCRIPTS = [
   'js/modules/reports.js', 'js/modules/branches.js', 'js/modules/settings.js', 'js/modules/commerce.js', 'js/menu.js',
 ];
 
+/**
+ * Page modules describe a response by its content — { data, meta?, summary?, totals?, chart? } — which is also what
+ * Api.unwrap() hands to the pages. wire() turns that into the envelope the server really sends.
+ */
+function wire(resp, e) {
+  if (!resp || typeof resp !== 'object') return resp;
+  const created = /^201/.test((e && e.status) || '');
+  let data = resp.data;
+  if (resp.meta !== undefined || resp.summary !== undefined || resp.totals !== undefined || resp.chart !== undefined) {
+    data = { links: '<Links>', info: '<Info>', rows: resp.data };
+    ['summary', 'totals', 'chart'].forEach((k) => { if (resp[k] !== undefined) data[k] = resp[k]; });
+  }
+  return {
+    request_id: 'string', request_url: 'string', status_code: created ? 201 : 200, status: created ? 'Created' : 'OK',
+    message: '', timestamp: 'datetime', latency: 'string', data, app: 'lestari',
+  };
+}
+
 function loadRegistry() {
   const store = {};
   const ctx = {
@@ -244,7 +262,7 @@ function renderEndpoint(e) {
     s += '**Request body** (' + (e.contentType || 'application/json') + ')' + (e.required && e.required.length ? ' — required: ' + e.required.join(', ') : '') + '\n\n' + json(e.body) + '\n\n';
   }
   s += '**Response** ' + (e.status || (e.isFile ? '200 OK' : (typeof e.response === 'string' && /^204/.test(e.response) ? '' : '200 OK'))) + '\n\n';
-  s += typeof e.response === 'string' ? e.response + '\n\n' : json(e.response) + '\n\n';
+  s += typeof e.response === 'string' ? e.response + '\n\n' : json(wire(e.response, e)) + '\n\n';
   if (e.note) s += '> ' + e.note + '\n\n';
   return s;
 }
@@ -333,27 +351,54 @@ This is the contract the HTML client expects from the Lestari backend. It covers
 
 ### Response envelope
 
-Single object:
+Every JSON response, success or error, has the same envelope:
 \`\`\`json
-{ "data": { "id": 1, "name": "…" } }
+{
+  "request_id": "6ba3451b-ac73-483e-8481-2ac53f5e75a2",
+  "request_url": "GET http://localhost:8080/api/v1/taxes/019a5f3c-8b2e-7d41-9c3a-5e8f1b2c4d6a",
+  "status_code": 200,
+  "status": "OK",
+  "message": "",
+  "timestamp": "2026-11-11T14:22:47.608963985+07:00",
+  "latency": "7.746177ms",
+  "data": { "id": "019a5f3c-8b2e-7d41-9c3a-5e8f1b2c4d6a", "name": "…" },
+  "app": "lestari"
+}
+\`\`\`
+\`request_id\` is also sent as the \`X-Request-Id\` header. \`204 No Content\` has no body. The examples below show the
+whole envelope with placeholder values for the fixed attributes.
+
+List — \`data\` is a page of \`rows\` (all list endpoints accept \`page\` (from 1), \`per_page\`, \`q\`, \`sort\`, \`order\`).
+\`links\` are ready-made URLs; \`previous\` / \`next\` are empty at the ends. Lists that are never paged return every row
+with \`pages: 1\`:
+\`\`\`json
+"data": {
+  "links": { "first": "…/taxes?per_page=25", "previous": "", "current": "…/taxes?page=1&per_page=25", "next": "…/taxes?page=2&per_page=25", "last": "…/taxes?page=5&per_page=25" },
+  "info": { "limit": 25, "page": 1, "pages": 5, "total": 120 },
+  "rows": [ { "id": "…" } ]
+}
+\`\`\`
+In the examples \`"<Links>"\` and \`"<Info>"\` stand for these two objects.
+
+Report — a list plus aggregates next to \`rows\`:
+\`\`\`json
+"data": { "links": { … }, "info": { … }, "rows": [ … ], "summary": { … }, "totals": { … }, "chart": [ … ] }
 \`\`\`
 
-List (all list endpoints accept \`page\`, \`per_page\`, \`q\`, \`sort\`, \`order\`):
+Error (any 4xx/5xx) — \`message\` is the text to show (in the request language), \`data.code\` is a stable machine
+code, and \`data.fields\` (422) maps request attributes to messages shown next to the form inputs:
 \`\`\`json
-{ "data": [ { "id": 1 } ], "meta": { "page": 1, "per_page": 25, "total": 120, "total_pages": 5 } }
+{
+  "request_id": "…", "request_url": "POST http://localhost:8080/api/v1/taxes",
+  "status_code": 422, "status": "Unprocessable Entity",
+  "message": "Some fields are invalid.",
+  "timestamp": "…", "latency": "…",
+  "data": { "code": "validation_failed", "fields": { "name": ["Required"] } },
+  "app": "lestari"
+}
 \`\`\`
 
-Report (lists plus aggregates):
-\`\`\`json
-{ "data": [ … ], "summary": { … }, "totals": { … }, "meta": { … } }
-\`\`\`
-
-Error (any 4xx/5xx). \`fields\` maps request attributes to messages and is shown next to the form inputs:
-\`\`\`json
-{ "error": { "code": "validation_failed", "message": "Some fields are invalid.", "fields": { "name": ["Required"] } } }
-\`\`\`
-
-| Status | When | \`error.code\` examples |
+| Status | When | \`data.code\` examples |
 |---|---|---|
 | 400 | malformed request | \`bad_request\` |
 | 401 | missing/expired token, wrong credentials | \`unauthenticated\`, \`invalid_credentials\`, \`two_factor_required\` |
